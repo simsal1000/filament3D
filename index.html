@@ -403,57 +403,31 @@
         let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
         let defaultTypes = ['Basic', 'Matte', 'Silk', 'Metal', 'Transparent', 'Wood', 'Carbon'];
 
-        let brands = JSON.parse(localStorage.getItem('filament_brands')) || defaultBrands;
-        let materials = JSON.parse(localStorage.getItem('filament_materials')) || defaultMaterials;
-        let filamentTypes = JSON.parse(localStorage.getItem('filament_types')) || defaultTypes;
+        let brands = [...defaultBrands];
+        let materials = [...defaultMaterials];
+        let filamentTypes = [...defaultTypes];
 
-        auth.onAuthStateChanged((user) => {
-            currentUser = user;
-            const userInfo = document.getElementById('authUserInfo');
-            const actionContainer = document.getElementById('authActionContainer');
-            const toggleAddBtn = document.getElementById('toggleAddBtn');
-
-            if (user) {
-                userInfo.innerHTML = `🟢 Logged in as: <strong>${user.email}</strong>`;
-                actionContainer.innerHTML = `<button onclick="logoutAdmin()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0; background: var(--danger);">🚪 Logout</button>`;
-                if (toggleAddBtn) toggleAddBtn.style.display = 'inline-block';
+        // Real-time listener for settings lists in Firestore
+        db.collection("settings").doc("lists").onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.brands) brands = data.brands;
+                if (data.materials) materials = data.materials;
+                if (data.filamentTypes) filamentTypes = data.filamentTypes;
             } else {
-                userInfo.innerHTML = `🔒 Read-Only Mode (Not Logged In)`;
-                actionContainer.innerHTML = `<button onclick="toggleAuthModal()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">🔑 Admin Login</button>`;
-                if (toggleAddBtn) toggleAddBtn.style.display = 'none';
-                document.getElementById('addFormCard').style.display = 'none';
+                db.collection("settings").doc("lists").set({
+                    brands: defaultBrands,
+                    materials: defaultMaterials,
+                    filamentTypes: defaultTypes
+                }).catch(err => console.error("Error creating default lists:", err));
             }
-            mostraBobine();
+            renderDropdowns();
+            if (document.getElementById('settingsPanel').style.display === 'block') {
+                renderSettingsLists();
+            }
+        }, (error) => {
+            console.error("Error loading lists from Firestore:", error);
         });
-
-        function toggleAuthModal() {
-            const modal = document.getElementById('loginModalCard');
-            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function loginAdmin() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            if (!email || !password) {
-                alert('Please enter both email and password.');
-                return;
-            }
-            auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    document.getElementById('loginEmail').value = '';
-                    document.getElementById('loginPassword').value = '';
-                    document.getElementById('loginModalCard').style.display = 'none';
-                })
-                .catch((error) => {
-                    alert('Login failed: ' + error.message);
-                });
-        }
-
-        function logoutAdmin() {
-            auth.signOut().catch((error) => {
-                alert('Error signing out: ' + error.message);
-            });
-        }
 
         function toggleAddForm() {
             const card = document.getElementById('addFormCard');
@@ -466,10 +440,6 @@
         }
 
         function caricaBobinaPerModifica(firebaseId) {
-            if (!currentUser) {
-                alert('You must be logged in as admin to edit spools.');
-                return;
-            }
             const b = bobine.find(item => item.firebaseId === firebaseId);
             if (!b) return;
 
@@ -612,73 +582,118 @@
             }
         }
 
+        function saveListsToCloud() {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return Promise.reject('Not authenticated');
+            }
+            return db.collection("settings").doc("lists").set({
+                brands: brands,
+                materials: materials,
+                filamentTypes: filamentTypes
+            }).catch(error => {
+                alert("Error saving lists to cloud: " + error.message);
+                throw error;
+            });
+        }
+
         function aggiungiBrandPersonalizzato() {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return;
+            }
             const input = document.getElementById('newBrandInput');
             const val = input.value.trim();
             if (val && !brands.includes(val)) {
                 brands.push(val);
-                localStorage.setItem('filament_brands', JSON.stringify(brands));
-                input.value = '';
-                renderDropdowns();
-                renderSettingsLists();
+                saveListsToCloud().then(() => {
+                    input.value = '';
+                }).catch(() => {
+                    brands.pop();
+                });
             }
         }
 
         function rimuoviBrand(b) {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return;
+            }
             if (brands.length <= 1) {
                 alert('You must keep at least one brand.');
                 return;
             }
+            const oldBrands = [...brands];
             brands = brands.filter(item => item !== b);
-            localStorage.setItem('filament_brands', JSON.stringify(brands));
-            renderDropdowns();
-            renderSettingsLists();
+            saveListsToCloud().catch(() => {
+                brands = oldBrands;
+            });
         }
 
         function aggiungiMaterialePersonalizzato() {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return;
+            }
             const input = document.getElementById('newMaterialInput');
             const val = input.value.trim().toUpperCase();
             if (val && !materials.includes(val)) {
                 materials.push(val);
-                localStorage.setItem('filament_materials', JSON.stringify(materials));
-                input.value = '';
-                renderDropdowns();
-                renderSettingsLists();
+                saveListsToCloud().then(() => {
+                    input.value = '';
+                }).catch(() => {
+                    materials.pop();
+                });
             }
         }
 
         function rimuoviMateriale(m) {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return;
+            }
             if (materials.length <= 1) {
                 alert('You must keep at least one material.');
                 return;
             }
+            const oldMaterials = [...materials];
             materials = materials.filter(item => item !== m);
-            localStorage.setItem('filament_materials', JSON.stringify(materials));
-            renderDropdowns();
-            renderSettingsLists();
+            saveListsToCloud().catch(() => {
+                materials = oldMaterials;
+            });
         }
 
         function aggiungiTipoPersonalizzato() {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return;
+            }
             const input = document.getElementById('newTypeInput');
             const val = input.value.trim();
             if (val && !filamentTypes.includes(val)) {
                 filamentTypes.push(val);
-                localStorage.setItem('filament_types', JSON.stringify(filamentTypes));
-                input.value = '';
-                renderDropdowns();
-                renderSettingsLists();
+                saveListsToCloud().then(() => {
+                    input.value = '';
+                }).catch(() => {
+                    filamentTypes.pop();
+                });
             }
         }
 
         function rimuoviTipo(t) {
+            if (!currentUser) {
+                alert('You must be logged in as admin to modify lists.');
+                return;
+            }
             if (filamentTypes.length <= 1) {
                 alert('You must keep at least one type.');
                 return;
             }
+            const oldTypes = [...filamentTypes];
             filamentTypes = filamentTypes.filter(item => item !== t);
-            localStorage.setItem('filament_types', JSON.stringify(filamentTypes));
-            renderDropdowns();
-            renderSettingsLists();
+            saveListsToCloud().catch(() => {
+                filamentTypes = oldTypes;
+            });
         }
 
         function updateColorFromPicker(hex) {
@@ -917,6 +932,54 @@
                 }
             };
             reader.readAsText(file);
+        }
+
+        auth.onAuthStateChanged((user) => {
+            currentUser = user;
+            const userInfo = document.getElementById('authUserInfo');
+            const actionContainer = document.getElementById('authActionContainer');
+            const toggleAddBtn = document.getElementById('toggleAddBtn');
+
+            if (user) {
+                userInfo.innerHTML = `🟢 Logged in as: <strong>${user.email}</strong>`;
+                actionContainer.innerHTML = `<button onclick="logoutAdmin()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0; background: var(--danger);">🚪 Logout</button>`;
+                if (toggleAddBtn) toggleAddBtn.style.display = 'inline-block';
+            } else {
+                userInfo.innerHTML = `🔒 Read-Only Mode (Not Logged In)`;
+                actionContainer.innerHTML = `<button onclick="toggleAuthModal()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">🔑 Admin Login</button>`;
+                if (toggleAddBtn) toggleAddBtn.style.display = 'none';
+                document.getElementById('addFormCard').style.display = 'none';
+            }
+            mostraBobine();
+        });
+
+        function toggleAuthModal() {
+            const modal = document.getElementById('loginModalCard');
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function loginAdmin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            if (!email || !password) {
+                alert('Please enter both email and password.');
+                return;
+            }
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('loginModalCard').style.display = 'none';
+                })
+                .catch((error) => {
+                    alert('Login failed: ' + error.message);
+                });
+        }
+
+        function logoutAdmin() {
+            auth.signOut().catch((error) => {
+                alert('Error signing out: ' + error.message);
+            });
         }
 
         renderDropdowns();
