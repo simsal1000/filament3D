@@ -194,7 +194,7 @@
     <!-- MAIN SECTION: Spools List & Search -->
     <div class="card">
         <h3>
-            Number of Spools = <span id="totaleBobine">0</span>
+            <span style="font-size: 0.85rem; font-weight: normal;" id="totaleBobine">Spools = 0 (0 types)</span>
             <button onclick="toggleAddForm()" class="btn-success" id="toggleAddBtn" style="display: none; width: auto; padding: 6px 12px; font-size: 0.85rem; margin:0;">➕ Add New Spool</button>
         </h3>
         
@@ -844,7 +844,7 @@
 
             let totalQuantity = bobineFiltrate.reduce((sum, b) => sum + (parseInt(b.quantita || b.quantity) || 1), 0);
             let uniqueTypes = bobineFiltrate.length;
-            document.getElementById('totaleBobine').innerText = `${totalQuantity} (different types = ${uniqueTypes})`;
+            document.getElementById('totaleBobine').innerText = `Spools = ${totalQuantity} (${uniqueTypes} types)`;
 
             if (bobineFiltrate.length === 0) {
                 container.innerHTML = '<p style="color: #6b7280; text-align: center;">No spools found.</p>';
