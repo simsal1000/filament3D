@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Filament Manager Cloud</title>
+    
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #1f2937;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 { font-size: 1.6rem; text-align: center; margin-bottom: 16px; color: var(--primary); }
+        .card {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+        }
+        h3 { margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        label { font-size: 0.85rem; font-weight: bold; color: #4b5563; display: block; margin-top: 8px; }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background: #fff;
+        }
+        .row { display: flex; gap: 8px; }
+        .row > div { flex: 1; }
+        
+        /* 256 Color Palette Grid Style */
+        .color-picker-container {
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 2px;
+            background: #d1d5db;
+            padding: 4px;
+            border-radius: 8px;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .palette-swatch {
+            width: 100%;
+            aspect-ratio: 1;
+            border: none;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: transform 0.1s;
+        }
+        .palette-swatch:hover {
+            transform: scale(1.3);
+            z-index: 10;
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
+        }
+        .palette-swatch.selected {
+            outline: 2px solid #000;
+            outline-offset: -1px;
+            z-index: 5;
+        }
+        .selected-preview-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            margin-bottom: 8px;
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: var(--primary-hover); }
+        .filament-item {
+            background: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border-left: 5px solid #2563eb;
+            position: relative;
+        }
+        .filament-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .filament-info h4 { margin: 0 0 4px 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; }
+        .filament-info p { margin: 2px 0; font-size: 0.9rem; color: #4b5563; }
+        .filament-details p { margin: 2px 0; font-size: 0.78rem; color: #4b5563; }
+        .color-dot {
+            width: 64px;
+            height: 20px;
+            border-radius: 4px;
+            display: inline-block;
+            border: 1px solid rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+        .badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .badge-type {
+            background: #f3e8ff;
+            color: #7e22ce;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .badge-brand {
+            background: #ffedd5;
+            color: #c2410c;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .delete-btn {
+            background: var(--danger);
+            width: auto;
+            padding: 4px 12px;
+            margin: 0;
+            font-size: 0.85rem;
+        }
+        .btn-secondary { background: #4b5563; }
+        .btn-success { background: var(--success); }
+        .backup-container { display: flex; gap: 8px; }
+
+        .settings-panel {
+            display: none;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .tag-pill {
+            background: #e5e7eb;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tag-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0;
+            width: auto;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        #syncStatus { font-size: 0.8rem; text-align: center; color: #10b981; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🫙 3D Filament Manager Cloud</h1>
+    <div id="syncStatus">🔄 Connecting to Firebase Cloud...</div>
+
+    <!-- MAIN SECTION: Spools List & Search -->
+    <div class="card">
+        <h3>
+            Your Spools (<span id="totaleBobine">0</span>)
+            <button onclick="toggleAddForm()" class="btn-success" id="toggleAddBtn" style="width: auto; padding: 6px 12px; font-size: 0.85rem; margin:0;">➕ Add New Spool</button>
+        </h3>
+        
+        <!-- Search & Filter Bar -->
+        <div class="row" style="margin-bottom: 12px;">
+            <div style="flex: 2;">
+                <input type="text" id="filtroRicerca" placeholder="🔍 Search by brand, material, type or color..." oninput="mostraBobine()" style="margin:0;">
+            </div>
+            <div style="flex: 1;">
+                <select id="filtroMateriale" onchange="mostraBobine()" style="margin:0;">
+                    <option value="">All Materials</option>
+                </select>
+            </div>
+            <div style="flex: 1;">
+                <select id="filtroTipo" onchange="mostraBobine()" style="margin:0;">
+                    <option value="">All Types</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="listaBobine"></div>
+    </div>
+
+    <!-- SEPARATE SECTION: Add New Spool Form -->
+    <div class="card" id="addFormCard" style="display: none; border: 2px solid var(--primary);">
+        <h3>
+            Add New Spool
+            <div style="display: flex; gap: 6px;">
+                <button onclick="toggleSettingsPanel()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">⚙️ Edit Lists</button>
+                <button onclick="toggleAddForm()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">❌ Close</button>
+            </div>
+        </h3>
+
+        <!-- Settings Panel for Custom Lists -->
+        <div id="settingsPanel" class="settings-panel">
+            <h4 style="margin:0 0 8px 0; font-size:0.95rem; color:var(--primary);">Manage Dropdown Lists</h4>
+            
+            <label>Manage Brands</label>
+            <div class="tag-list" id="brandTagList"></div>
+            <div class="row" style="margin-bottom: 0;">
+                <input type="text" id="newBrandInput" placeholder="New brand name..." style="margin:0;">
+                <button class="btn-success" onclick="aggiungiBrandPersonalizzato()" style="width: auto; margin:0; padding: 8px 12px;">Add</button>
+            </div>
+
+            <label style="margin-top: 12px;">Manage Materials</label>
+            <div class="tag-list" id="materialTagList"></div>
+            <div class="row" style="margin-bottom: 0;">
+                <input type="text" id="newMaterialInput" placeholder="New material name..." style="margin:0;">
+                <button class="btn-success" onclick="aggiungiMaterialePersonalizzato()" style="width: auto; margin:0; padding: 8px 12px;">Add</button>
+            </div>
+
+            <label style="margin-top: 12px;">Manage Types</label>
+            <div class="tag-list" id="typeTagList"></div>
+            <div class="row" style="margin-bottom: 0;">
+                <input type="text" id="newTypeInput" placeholder="New type name..." style="margin:0;">
+                <button class="btn-success" onclick="aggiungiTipoPersonalizzato()" style="width: auto; margin:0; padding: 8px 12px;">Add</button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div>
+                <label>Manufacturer / Brand</label>
+                <select id="produttore"></select>
+            </div>
+            <div>
+                <label>Material</label>
+                <select id="materiale"></select>
+            </div>
+            <div>
+                <label>Type</label>
+                <select id="filamentType"></select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>Color Name</label>
+                <input type="text" id="colore" placeholder="e.g., Fire Red">
+            </div>
+            <div>
+                <label>Color Picker (RGB)</label>
+                <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                    <input type="color" id="nativeColorPicker" value="#ff0000" onchange="updateColorFromPicker(this.value)" style="width: 50px; height: 38px; padding: 0; cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px;">
+                    <span id="currentSelectedHex" style="font-size: 0.85rem; font-family: monospace; font-weight: bold;">#ff0000</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 8px;">
+            <div>
+                <label>Rosso (Red)</label>
+                <input type="number" id="rgbR" min="0" max="255" value="255" oninput="updateColorFromRGB()" style="margin:0;">
+            </div>
+            <div>
+                <label>Verde (Green)</label>
+                <input type="number" id="rgbG" min="0" max="255" value="0" oninput="updateColorFromRGB()" style="margin:0;">
+            </div>
+            <div>
+                <label>Blu (Blue)</label>
+                <input type="number" id="rgbB" min="0" max="255" value="0" oninput="updateColorFromRGB()" style="margin:0;">
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 12px;">
+            <div>
+                <label>Quantity (Spools)</label>
+                <input type="number" id="quantita" value="1" min="1" placeholder="e.g., 1">
+            </div>
+            <div>
+                <label>Remaining Weight (g)</label>
+                <input type="number" id="peso" value="1000" placeholder="e.g., 1000">
+            </div>
+            <div>
+                <label>Price (€)</label>
+                <input type="number" step="0.01" id="prezzo" placeholder="e.g., 22.50">
+            </div>
+        </div>
+
+        <div class="row">
+            <div>
+                <label>Hotend Temp (°C)</label>
+                <input type="number" id="tempHotend" placeholder="e.g., 210">
+            </div>
+            <div>
+                <label>Bed Temp (°C)</label>
+                <input type="number" id="tempBed" placeholder="e.g., 60">
+            </div>
+        </div>
+
+        <label>Notes / Comments</label>
+        <textarea id="note" rows="2" placeholder="e.g., Good adhesion, print slow..."></textarea>
+
+        <button id="saveButton" onclick="salvaBobina()">Save Spool</button>
+    </div>
+
+    <!-- Backup & Restore -->
+    <div class="card">
+        <h3>Data Management</h3>
+        <div class="backup-container">
+            <button class="btn-secondary" onclick="esportaDati()">Export Backup</button>
+            <button class="btn-secondary" onclick="document.getElementById('fileInput').click()">Import Backup</button>
+            <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importaDati(event)">
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuwej4Y_cMXXgQrpslNMlzrUEAR7q7XW8",
+            authDomain: "filament-3d-abeb1.firebaseapp.com",
+            projectId: "filament-3d-abeb1",
+            storageBucket: "filament-3d-abeb1.firebasestorage.app",
+            messagingSenderId: "33041359031",
+            appId: "1:33041359031:web:3d1a9136f1c2168d0b2d32"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let bobine = [];
+        let selectedHex = '#ff0000';
+        let editingFirebaseId = null;
+
+        let defaultBrands = ['eSUN', 'Prusa', 'Bambu Lab', 'Sunlu', 'Polymaker', 'Creality', 'Anycubic', 'Extrudr', 'Overture'];
+        let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
+        let defaultTypes = ['Basic', 'Matte', 'Silk', 'Metal', 'Transparent', 'Wood', 'Carbon'];
+
+        let brands = JSON.parse(localStorage.getItem('filament_brands')) || defaultBrands;
+        let materials = JSON.parse(localStorage.getItem('filament_materials')) || defaultMaterials;
+        let filamentTypes = JSON.parse(localStorage.getItem('filament_types')) || defaultTypes;
+
+        function toggleAddForm() {
+            const card = document.getElementById('addFormCard');
+            card.style.display = card.style.display === 'block' ? 'none' : 'block';
+            if (card.style.display === 'block') {
+                window.scrollTo({ top: card.offsetTop, behavior: 'smooth' });
+            } else {
+                pulisciForm();
+            }
+        }
+
+        function caricaBobinaPerModifica(firebaseId) {
+            const b = bobine.find(item => item.firebaseId === firebaseId);
+            if (!b) return;
+
+            editingFirebaseId = firebaseId;
+            document.getElementById('produttore').value = b.produttore || b.brand || brands[0];
+            document.getElementById('materiale').value = b.materiale || b.material || materials[0];
+            document.getElementById('filamentType').value = b.type || filamentTypes[0];
+            document.getElementById('colore').value = b.colore || b.color || '';
+            document.getElementById('quantita').value = b.quantita || b.quantity || 1;
+            document.getElementById('peso').value = b.peso !== undefined ? b.peso : (b.weight || 1000);
+            document.getElementById('prezzo').value = b.prezzo || '';
+            document.getElementById('tempHotend').value = b.tempHotend || '';
+            document.getElementById('tempBed').value = b.tempBed || '';
+            document.getElementById('note').value = b.note || '';
+
+            selectedHex = b.coloreHex || '#ff0000';
+            updateColorFromPicker(selectedHex);
+
+            document.getElementById('saveButton').innerText = "Update Spool";
+
+            const card = document.getElementById('addFormCard');
+            card.style.display = 'block';
+            window.scrollTo({ top: card.offsetTop, behavior: 'smooth' });
+        }
+
+        function rgbToHex(rgb) {
+            if (!rgb.startsWith('rgb')) return rgb;
+            let match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (!match) return rgb;
+            function z(x) { return ('0' + parseInt(x).toString(16)).slice(-2); }
+            return '#' + z(match[1]) + z(match[2]) + z(match[3]);
+        }
+
+        db.collection("bobine").onSnapshot((snapshot) => {
+            bobine = [];
+            snapshot.forEach((doc) => {
+                bobine.push({ firebaseId: doc.id, ...doc.data() });
+            });
+            document.getElementById('syncStatus').innerText = "🟢 Synced with Firebase Cloud";
+            mostraBobine();
+        }, (error) => {
+            document.getElementById('syncStatus').innerText = "🔴 Sync Error (Check Firebase Config)";
+            console.error(error);
+        });
+
+        function toggleSettingsPanel() {
+            const panel = document.getElementById('settingsPanel');
+            panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+            if (panel.style.display === 'block') {
+                renderSettingsLists();
+            }
+        }
+
+        function renderDropdowns() {
+            const prodSelect = document.getElementById('produttore');
+            const matSelect = document.getElementById('materiale');
+            const typeSelect = document.getElementById('filamentType');
+            const filterMatSelect = document.getElementById('filtroMateriale');
+            const filterTypeSelect = document.getElementById('filtroTipo');
+            
+            prodSelect.innerHTML = '';
+            brands.forEach(b => {
+                let opt = document.createElement('option');
+                opt.value = b;
+                opt.textContent = b;
+                prodSelect.appendChild(opt);
+            });
+
+            matSelect.innerHTML = '';
+            materials.forEach(m => {
+                let opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                matSelect.appendChild(opt);
+            });
+
+            if (typeSelect) {
+                typeSelect.innerHTML = '';
+                filamentTypes.forEach(t => {
+                    let opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    typeSelect.appendChild(opt);
+                });
+            }
+
+            if (filterMatSelect) {
+                const currentVal = filterMatSelect.value;
+                filterMatSelect.innerHTML = '<option value="">All Materials</option>';
+                materials.forEach(m => {
+                    let opt = document.createElement('option');
+                    opt.value = m;
+                    opt.textContent = m;
+                    filterMatSelect.appendChild(opt);
+                });
+                filterMatSelect.value = currentVal;
+            }
+
+            if (filterTypeSelect) {
+                const currentValType = filterTypeSelect.value;
+                filterTypeSelect.innerHTML = '<option value="">All Types</option>';
+                filamentTypes.forEach(t => {
+                    let opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t;
+                    filterTypeSelect.appendChild(opt);
+                });
+                filterTypeSelect.value = currentValType;
+            }
+        }
+
+        function renderSettingsLists() {
+            const brandListContainer = document.getElementById('brandTagList');
+            brandListContainer.innerHTML = '';
+            brands.forEach(b => {
+                const tag = document.createElement('div');
+                tag.className = 'tag-pill';
+                tag.innerHTML = `${b} <button class="tag-remove" onclick="rimuoviBrand('${b}')">&times;</button>`;
+                brandListContainer.appendChild(tag);
+            });
+
+            const matListContainer = document.getElementById('materialTagList');
+            matListContainer.innerHTML = '';
+            materials.forEach(m => {
+                const tag = document.createElement('div');
+                tag.className = 'tag-pill';
+                tag.innerHTML = `${m} <button class="tag-remove" onclick="rimuoviMateriale('${m}')">&times;</button>`;
+                matListContainer.appendChild(tag);
+            });
+
+            const typeListContainer = document.getElementById('typeTagList');
+            if (typeListContainer) {
+                typeListContainer.innerHTML = '';
+                filamentTypes.forEach(t => {
+                    const tag = document.createElement('div');
+                    tag.className = 'tag-pill';
+                    tag.innerHTML = `${t} <button class="tag-remove" onclick="rimuoviTipo('${t}')">&times;</button>`;
+                    typeListContainer.appendChild(tag);
+                });
+            }
+        }
+
+        function aggiungiBrandPersonalizzato() {
+            const input = document.getElementById('newBrandInput');
+            const val = input.value.trim();
+            if (val && !brands.includes(val)) {
+                brands.push(val);
+                localStorage.setItem('filament_brands', JSON.stringify(brands));
+                input.value = '';
+                renderDropdowns();
+                renderSettingsLists();
+            }
+        }
+
+        function rimuoviBrand(b) {
+            if (brands.length <= 1) {
+                alert('You must keep at least one brand.');
+                return;
+            }
+            brands = brands.filter(item => item !== b);
+            localStorage.setItem('filament_brands', JSON.stringify(brands));
+            renderDropdowns();
+            renderSettingsLists();
+        }
+
+        function aggiungiMaterialePersonalizzato() {
+            const input = document.getElementById('newMaterialInput');
+            const val = input.value.trim().toUpperCase();
+            if (val && !materials.includes(val)) {
+                materials.push(val);
+                localStorage.setItem('filament_materials', JSON.stringify(materials));
+                input.value = '';
+                renderDropdowns();
+                renderSettingsLists();
+            }
+        }
+
+        function rimuoviMateriale(m) {
+            if (materials.length <= 1) {
+                alert('You must keep at least one material.');
+                return;
+            }
+            materials = materials.filter(item => item !== m);
+            localStorage.setItem('filament_materials', JSON.stringify(materials));
+            renderDropdowns();
+            renderSettingsLists();
+        }
+
+        function aggiungiTipoPersonalizzato() {
+            const input = document.getElementById('newTypeInput');
+            const val = input.value.trim();
+            if (val && !filamentTypes.includes(val)) {
+                filamentTypes.push(val);
+                localStorage.setItem('filament_types', JSON.stringify(filamentTypes));
+                input.value = '';
+                renderDropdowns();
+                renderSettingsLists();
+            }
+        }
+
+        function rimuoviTipo(t) {
+            if (filamentTypes.length <= 1) {
+                alert('You must keep at least one type.');
+                return;
+            }
+            filamentTypes = filamentTypes.filter(item => item !== t);
+            localStorage.setItem('filament_types', JSON.stringify(filamentTypes));
+            renderDropdowns();
+            renderSettingsLists();
+        }
+
+        function updateColorFromPicker(hex) {
+            selectedHex = hex;
+            document.getElementById('nativeColorPicker').value = hex;
+            document.getElementById('currentSelectedHex').innerText = hex;
+            let rgb = hexToRgb(hex);
+            if (rgb) {
+                document.getElementById('rgbR').value = rgb.r;
+                document.getElementById('rgbG').value = rgb.g;
+                document.getElementById('rgbB').value = rgb.b;
+            }
+        }
+
+        function updateColorFromRGB() {
+            let r = parseInt(document.getElementById('rgbR').value) || 0;
+            let g = parseInt(document.getElementById('rgbG').value) || 0;
+            let b = parseInt(document.getElementById('rgbB').value) || 0;
+            r = Math.max(0, Math.min(255, r));
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
+
+            let hex = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+            selectedHex = hex;
+            document.getElementById('nativeColorPicker').value = hex;
+            document.getElementById('currentSelectedHex').innerText = hex;
+        }
+
+        function hexToRgb(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function salvaBobina() {
+            const produttore = document.getElementById('produttore').value;
+            const materiale = document.getElementById('materiale').value;
+            const filamentType = document.getElementById('filamentType').value;
+            const colore = document.getElementById('colore').value.trim();
+            const coloreHex = selectedHex;
+            const quantita = document.getElementById('quantita').value.trim();
+            const peso = document.getElementById('peso').value.trim();
+            const tempHotend = document.getElementById('tempHotend').value.trim();
+            const tempBed = document.getElementById('tempBed').value.trim();
+            const prezzo = document.getElementById('prezzo').value.trim();
+            const note = document.getElementById('note').value.trim();
+
+            if (!produttore || !materiale || !colore) {
+                alert('Please fill all required fields (Brand, Material, and Color Name)!');
+                return;
+            }
+
+            const datiBobina = {
+                produttore,
+                materiale: materiale.toUpperCase(),
+                type: filamentType,
+                colore,
+                coloreHex,
+                quantita: quantita ? parseInt(quantita) : 1,
+                peso: peso ? parseInt(peso) : 1000,
+                tempHotend,
+                tempBed,
+                prezzo,
+                note
+            };
+
+            if (editingFirebaseId) {
+                db.collection("bobine").doc(editingFirebaseId).update(datiBobina)
+                    .then(() => {
+                        pulisciForm();
+                        toggleAddForm();
+                    })
+                    .catch((error) => {
+                        alert("Error updating cloud: " + error.message);
+                    });
+            } else {
+                datiBobina.id = Date.now();
+                db.collection("bobine").add(datiBobina)
+                    .then(() => {
+                        pulisciForm();
+                        toggleAddForm();
+                    })
+                    .catch((error) => {
+                        alert("Error saving to cloud: " + error.message);
+                    });
+            }
+        }
+
+        function pulisciForm() {
+            editingFirebaseId = null;
+            document.getElementById('saveButton').innerText = "Save Spool";
+            document.getElementById('colore').value = '';
+            document.getElementById('quantita').value = '1';
+            document.getElementById('peso').value = '1000';
+            document.getElementById('tempHotend').value = '';
+            document.getElementById('tempBed').value = '';
+            document.getElementById('prezzo').value = '';
+            document.getElementById('note').value = '';
+            updateColorFromPicker('#ff0000');
+        }
+
+        function eliminaBobina(firebaseId) {
+            if (confirm('Are you sure you want to delete this spool?')) {
+                db.collection("bobine").doc(firebaseId).delete()
+                    .catch((error) => {
+                        alert("Error deleting from cloud: " + error.message);
+                    });
+            }
+        }
+
+        function toggleDettagli(firebaseId) {
+            const detailsDiv = document.getElementById(`dettagli-${firebaseId}`);
+            const btn = document.getElementById(`btn-toggle-${firebaseId}`);
+            if (detailsDiv.style.display === 'none') {
+                detailsDiv.style.display = 'block';
+                btn.textContent = '➖';
+                btn.style.background = '#4b5563';
+                btn.style.color = 'white';
+                btn.style.border = '1px solid #4b5563';
+            } else {
+                detailsDiv.style.display = 'none';
+                btn.textContent = '➕';
+                btn.style.background = 'white';
+                btn.style.color = 'black';
+                btn.style.border = '1px solid black';
+            }
+        }
+
+        function mostraBobine() {
+            const container = document.getElementById('listaBobine');
+            const filtro = document.getElementById('filtroRicerca').value.toLowerCase();
+            const materialeSelezionato = document.getElementById('filtroMateriale') ? document.getElementById('filtroMateriale').value.toLowerCase() : '';
+            const tipoSelezionato = document.getElementById('filtroTipo') ? document.getElementById('filtroTipo').value.toLowerCase() : '';
+            container.innerHTML = '';
+
+            const bobineFiltrate = bobine.filter(b => {
+                const prod = (b.produttore || b.brand || '').toLowerCase();
+                const mat = (b.materiale || b.material || '').toLowerCase();
+                const typ = (b.type || '').toLowerCase();
+                const col = (b.colore || b.color || '').toLowerCase();
+                
+                const matchTesto = prod.includes(filtro) || mat.includes(filtro) || typ.includes(filtro) || col.includes(filtro);
+                const matchMateriale = !materialeSelezionato || mat === materialeSelezionato;
+                const matchTipo = !tipoSelezionato || typ === tipoSelezionato;
+
+                return matchTesto && matchMateriale && matchTipo;
+            });
+
+            document.getElementById('totaleBobine').innerText = bobineFiltrate.length;
+
+            if (bobineFiltrate.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center;">No spools found.</p>';
+                return;
+            }
+
+            bobineFiltrate.forEach(b => {
+                let dettagliTemp = (b.tempHotend || b.tempBed) ? `<p>🌡️ Temp: <strong>${b.tempHotend || '?'}°C / ${b.tempBed || '?'}°C</strong></p>` : '';
+                let dettaglioPrezzo = b.prezzo ? `<p>💶 Price: <strong>€${b.prezzo}</strong></p>` : '';
+                let dettaglioNote = b.note ? `<p style="font-style: italic; color: #6b7280;">💬 "${b.note}"</p>` : '';
+                let hexColor = b.coloreHex || '#cccccc';
+                let numBobine = b.quantita || b.quantity || 1;
+                let pesoRimasto = b.peso !== undefined ? b.peso : (b.weight || 1000);
+
+                const div = document.createElement('div');
+                div.className = 'filament-item';
+                div.innerHTML = `
+                    <div class="filament-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                        <div class="filament-info" style="flex: 1; overflow: hidden;">
+                            <h4 style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: 0; overflow: hidden;">
+                                <span class="color-dot" style="background-color: ${hexColor}; width: 64px; height: 20px;"></span>
+                                <span class="badge">${b.materiale || b.material || "PLA"}</span>
+                                <span class="badge-brand">${b.produttore || b.brand || "Unknown"}</span>
+                                ${b.type ? `<span class="badge-type">${b.type}</span>` : ''}
+                                <span style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${b.colore || b.color || ""}</span>
+                            </h4>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
+                            <button onclick="toggleDettagli('${b.firebaseId}')" id="btn-toggle-${b.firebaseId}" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: white; border-radius: 6px; margin: 0; border: 1px solid black; color: black; cursor: pointer;" title="Expand/Collapse">➕</button>
+                            <button onclick="caricaBobinaPerModifica('${b.firebaseId}')" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: var(--primary); border-radius: 6px; margin: 0; border: none; color: white; cursor: pointer;" title="Edit">✏️</button>
+                            <button class="delete-btn" onclick="eliminaBobina('${b.firebaseId}')" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: var(--danger); border-radius: 6px; margin: 0;" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                    <div id="dettagli-${b.firebaseId}" class="filament-details" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+                        <p>⚖️ Remaining: <strong>${numBobine} ${numBobine == 1 ? 'spool' : 'spools'} (${pesoRimasto} g)</strong></p>
+                        ${dettagliTemp}
+                        ${dettaglioPrezzo}
+                        ${dettaglioNote}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function esportaDati() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(bobine));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "3d_spools_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importaDati(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const datiImportati = JSON.parse(e.target.result);
+                    if (Array.isArray(datiImportati)) {
+                        datiImportati.forEach(b => {
+                            delete b.firebaseId;
+                            db.collection("bobine").add(b);
+                        });
+                        alert('Backup successfully imported to Cloud!');
+                    } else {
+                        alert('Invalid file format.');
+                    }
+                } catch (err) {
+                    alert('Error reading the file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        renderDropdowns();
+        updateColorFromPicker('#ff0000');
+    </script>
+</body>
+</html>
