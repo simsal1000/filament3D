@@ -80,9 +80,9 @@
         .filament-info p { margin: 2px 0; font-size: 0.9rem; color: #4b5563; }
         .filament-details p { margin: 2px 0; font-size: 0.78rem; color: #4b5563; }
         .color-dot {
-            width: 28px;
-            height: 36px;
-            border-radius: 6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
             display: inline-block;
             border: 1px solid rgba(0,0,0,0.2);
             flex-shrink: 0;
@@ -194,7 +194,7 @@
     <!-- MAIN SECTION: Spools List & Search -->
     <div class="card">
         <h3>
-            Your Spools (<span id="totaleBobine">0</span>)
+            Number of Spools = <span id="totaleBobine">0</span>
             <button onclick="toggleAddForm()" class="btn-success" id="toggleAddBtn" style="display: none; width: auto; padding: 6px 12px; font-size: 0.85rem; margin:0;">➕ Add New Spool</button>
         </h3>
         
@@ -842,7 +842,9 @@
                 return matchTesto && matchMateriale && matchTipo;
             });
 
-            document.getElementById('totaleBobine').innerText = bobineFiltrate.length;
+            let totalQuantity = bobineFiltrate.reduce((sum, b) => sum + (parseInt(b.quantita || b.quantity) || 1), 0);
+            let uniqueTypes = bobineFiltrate.length;
+            document.getElementById('totaleBobine').innerText = `${totalQuantity} (different types = ${uniqueTypes})`;
 
             if (bobineFiltrate.length === 0) {
                 container.innerHTML = '<p style="color: #6b7280; text-align: center;">No spools found.</p>';
