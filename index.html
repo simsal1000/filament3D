@@ -53,47 +53,6 @@
         .row { display: flex; gap: 8px; }
         .row > div { flex: 1; }
         
-        /* 256 Color Palette Grid Style */
-        .color-picker-container {
-            margin-top: 4px;
-            margin-bottom: 8px;
-        }
-        .palette-grid {
-            display: grid;
-            grid-template-columns: repeat(16, 1fr);
-            gap: 2px;
-            background: #d1d5db;
-            padding: 4px;
-            border-radius: 8px;
-            max-height: 140px;
-            overflow-y: auto;
-        }
-        .palette-swatch {
-            width: 100%;
-            aspect-ratio: 1;
-            border: none;
-            cursor: pointer;
-            border-radius: 2px;
-            transition: transform 0.1s;
-        }
-        .palette-swatch:hover {
-            transform: scale(1.3);
-            z-index: 10;
-            box-shadow: 0 0 4px rgba(0,0,0,0.5);
-        }
-        .palette-swatch.selected {
-            outline: 2px solid #000;
-            outline-offset: -1px;
-            z-index: 5;
-        }
-        .selected-preview-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 6px;
-            margin-bottom: 8px;
-        }
-
         button {
             background-color: var(--primary);
             color: white;
@@ -353,18 +312,41 @@
             </div>
         </div>
 
+        <!-- Hotend Temperature Row -->
+        <label style="margin-top: 10px; color: var(--primary);">🔥 Hotend Temperature (°C)</label>
         <div class="row">
             <div>
-                <label>Hotend Temp (°C)</label>
-                <input type="number" id="tempHotend" placeholder="e.g., 210">
+                <label style="font-weight: normal; font-size: 0.8rem;">Min (°C)</label>
+                <input type="number" id="tempHotendMin" placeholder="e.g., 190" style="margin:0;">
             </div>
             <div>
-                <label>Bed Temp (°C)</label>
-                <input type="number" id="tempBed" placeholder="e.g., 60">
+                <label style="font-weight: normal; font-size: 0.8rem;">Max (°C)</label>
+                <input type="number" id="tempHotendMax" placeholder="e.g., 230" style="margin:0;">
+            </div>
+            <div>
+                <label style="font-weight: normal; font-size: 0.8rem;">Rec. (°C)</label>
+                <input type="number" id="tempHotendRec" placeholder="e.g., 210" style="margin:0;">
             </div>
         </div>
 
-        <label>Notes / Comments</label>
+        <!-- Bed Temperature Row -->
+        <label style="margin-top: 8px; color: var(--primary);">🛏️ Bed Temperature (°C)</label>
+        <div class="row">
+            <div>
+                <label style="font-weight: normal; font-size: 0.8rem;">Min (°C)</label>
+                <input type="number" id="tempBedMin" placeholder="e.g., 50" style="margin:0;">
+            </div>
+            <div>
+                <label style="font-weight: normal; font-size: 0.8rem;">Max (°C)</label>
+                <input type="number" id="tempBedMax" placeholder="e.g., 70" style="margin:0;">
+            </div>
+            <div>
+                <label style="font-weight: normal; font-size: 0.8rem;">Rec. (°C)</label>
+                <input type="number" id="tempBedRec" placeholder="e.g., 60" style="margin:0;">
+            </div>
+        </div>
+
+        <label style="margin-top: 12px;">Notes / Comments</label>
         <textarea id="note" rows="2" placeholder="e.g., Good adhesion, print slow..."></textarea>
 
         <button id="saveButton" onclick="salvaBobina()">Save Spool</button>
@@ -451,8 +433,12 @@
             document.getElementById('quantita').value = b.quantita || b.quantity || 1;
             document.getElementById('peso').value = b.peso !== undefined ? b.peso : (b.weight || 1000);
             document.getElementById('prezzo').value = b.prezzo || '';
-            document.getElementById('tempHotend').value = b.tempHotend || '';
-            document.getElementById('tempBed').value = b.tempBed || '';
+            document.getElementById('tempHotendMin').value = b.tempHotendMin !== undefined ? b.tempHotendMin : '';
+            document.getElementById('tempHotendMax').value = b.tempHotendMax !== undefined ? b.tempHotendMax : '';
+            document.getElementById('tempHotendRec').value = b.tempHotendRec !== undefined ? b.tempHotendRec : (b.tempHotend || '');
+            document.getElementById('tempBedMin').value = b.tempBedMin !== undefined ? b.tempBedMin : '';
+            document.getElementById('tempBedMax').value = b.tempBedMax !== undefined ? b.tempBedMax : '';
+            document.getElementById('tempBedRec').value = b.tempBedRec !== undefined ? b.tempBedRec : (b.tempBed || '');
             document.getElementById('note').value = b.note || '';
 
             selectedHex = b.coloreHex || '#ff0000';
@@ -743,8 +729,12 @@
             const coloreHex = selectedHex;
             const quantita = document.getElementById('quantita').value.trim();
             const peso = document.getElementById('peso').value.trim();
-            const tempHotend = document.getElementById('tempHotend').value.trim();
-            const tempBed = document.getElementById('tempBed').value.trim();
+            const tempHotendMin = document.getElementById('tempHotendMin').value.trim();
+            const tempHotendMax = document.getElementById('tempHotendMax').value.trim();
+            const tempHotendRec = document.getElementById('tempHotendRec').value.trim();
+            const tempBedMin = document.getElementById('tempBedMin').value.trim();
+            const tempBedMax = document.getElementById('tempBedMax').value.trim();
+            const tempBedRec = document.getElementById('tempBedRec').value.trim();
             const prezzo = document.getElementById('prezzo').value.trim();
             const note = document.getElementById('note').value.trim();
 
@@ -761,8 +751,12 @@
                 coloreHex,
                 quantita: quantita ? parseInt(quantita) : 1,
                 peso: peso ? parseInt(peso) : 1000,
-                tempHotend,
-                tempBed,
+                tempHotendMin,
+                tempHotendMax,
+                tempHotendRec,
+                tempBedMin,
+                tempBedMax,
+                tempBedRec,
                 prezzo,
                 note
             };
@@ -795,8 +789,12 @@
             document.getElementById('colore').value = '';
             document.getElementById('quantita').value = '1';
             document.getElementById('peso').value = '1000';
-            document.getElementById('tempHotend').value = '';
-            document.getElementById('tempBed').value = '';
+            document.getElementById('tempHotendMin').value = '';
+            document.getElementById('tempHotendMax').value = '';
+            document.getElementById('tempHotendRec').value = '';
+            document.getElementById('tempBedMin').value = '';
+            document.getElementById('tempBedMax').value = '';
+            document.getElementById('tempBedRec').value = '';
             document.getElementById('prezzo').value = '';
             document.getElementById('note').value = '';
         }
@@ -858,7 +856,25 @@
             }
 
             bobineFiltrate.forEach(b => {
-                let dettagliTemp = (b.tempHotend || b.tempBed) ? `<p>🌡️ Temp: <strong>${b.tempHotend || '?'}°C / ${b.tempBed || '?'}°C</strong></p>` : '';
+                let hotendStr = '';
+                if (b.tempHotendMin || b.tempHotendMax || b.tempHotendRec || b.tempHotend) {
+                    let range = (b.tempHotendMin && b.tempHotendMax) ? `${b.tempHotendMin}-${b.tempHotendMax}°C` : (b.tempHotendMin ? `>=${b.tempHotendMin}°C` : (b.tempHotendMax ? `<=${b.tempHotendMax}°C` : ''));
+                    let rec = b.tempHotendRec || b.tempHotend;
+                    hotendStr = `🔥 Hotend: <strong>${range}${range && rec ? ' ' : ''}${rec ? `(Rec: ${rec}°C)` : ''}</strong>`;
+                }
+                
+                let bedStr = '';
+                if (b.tempBedMin || b.tempBedMax || b.tempBedRec || b.tempBed) {
+                    let range = (b.tempBedMin && b.tempBedMax) ? `${b.tempBedMin}-${b.tempBedMax}°C` : (b.tempBedMin ? `>=${b.tempBedMin}°C` : (b.tempBedMax ? `<=${b.tempBedMax}°C` : ''));
+                    let rec = b.tempBedRec || b.tempBed;
+                    bedStr = `🛏️ Bed: <strong>${range}${range && rec ? ' ' : ''}${rec ? `(Rec: ${rec}°C)` : ''}</strong>`;
+                }
+
+                let dettagliTemp = '';
+                if (hotendStr || bedStr) {
+                    dettagliTemp = `<p style="margin: 2px 0;">${hotendStr}${hotendStr && bedStr ? ' | ' : ''}${bedStr}</p>`;
+                }
+
                 let dettaglioPrezzo = b.prezzo ? `<p>💶 Price: <strong>€${b.prezzo}</strong></p>` : '';
                 let dettaglioNote = b.note ? `<p style="font-style: italic; color: #6b7280;">💬 "${b.note}"</p>` : '';
                 let hexColor = b.coloreHex || '#cccccc';
