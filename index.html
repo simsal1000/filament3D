@@ -80,12 +80,13 @@
         .filament-info p { margin: 2px 0; font-size: 0.9rem; color: #4b5563; }
         .filament-details p { margin: 2px 0; font-size: 0.78rem; color: #4b5563; }
         .color-dot {
-            width: 64px;
-            height: 20px;
-            border-radius: 4px;
+            width: 28px;
+            height: 36px;
+            border-radius: 6px;
             display: inline-block;
             border: 1px solid rgba(0,0,0,0.2);
             flex-shrink: 0;
+            cursor: pointer;
         }
         .badge {
             background: #e0f2fe;
@@ -814,17 +815,10 @@
 
         function toggleDettagli(firebaseId) {
             const detailsDiv = document.getElementById(`dettagli-${firebaseId}`);
-            const btn = document.getElementById(`btn-toggle-${firebaseId}`);
             if (detailsDiv.style.display === 'none') {
                 detailsDiv.style.display = 'block';
-                btn.textContent = '➖';
-                btn.style.background = '#4b5563';
             } else {
                 detailsDiv.style.display = 'none';
-                btn.textContent = '➕';
-                btn.style.background = 'white';
-                btn.style.color = 'black';
-                btn.style.border = '1px solid black';
             }
         }
 
@@ -874,7 +868,6 @@
                 if (hotendStr || bedStr) {
                     dettagliTemp = `<p style="margin: 2px 0;">${hotendStr}${hotendStr && bedStr ? ' | ' : ''}${bedStr}</p>`;
                 }
-
                 let dettaglioPrezzo = b.prezzo ? `<p>💶 Price: <strong>€${b.prezzo}</strong></p>` : '';
                 let dettaglioNote = b.note ? `<p style="font-style: italic; color: #6b7280;">💬 "${b.note}"</p>` : '';
                 let hexColor = b.coloreHex || '#cccccc';
@@ -887,7 +880,7 @@
                     <div class="filament-header" style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                         <div class="filament-info" style="flex: 1;">
                             <h4 style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: 0; overflow: hidden;">
-                                <span class="color-dot" style="background-color: ${hexColor}; width: 32px; height: 14px;"></span>
+                                <span class="color-dot" onclick="toggleDettagli('${b.firebaseId}')" style="background-color: ${hexColor};" title="Click to expand details"></span>
                                 <span class="badge">${b.materiale || b.material || "PLA"}</span>
                                 <span class="badge-brand">${b.produttore || b.brand || "Unknown"}</span>
                                 ${b.type ? `<span class="badge-type">${b.type}</span>` : ''}
@@ -895,7 +888,6 @@
                             </h4>
                         </div>
                         <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
-                            <button onclick="toggleDettagli('${b.firebaseId}')" id="btn-toggle-${b.firebaseId}" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: white; border-radius: 6px; margin: 0; border: 1px solid black; color: black; cursor: pointer;" title="Expand/Collapse">➕</button>
                             ${currentUser ? `
                                 <button onclick="caricaBobinaPerModifica('${b.firebaseId}')" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: var(--primary); border-radius: 6px; margin: 0; border: none; color: white; cursor: pointer;" title="Edit">✏️</button>
                                 <button class="delete-btn" onclick="eliminaBobina('${b.firebaseId}')" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: var(--danger); border-radius: 6px; margin: 0;" title="Delete">🗑️</button>
@@ -924,10 +916,6 @@
         }
 
         function importaDati(event) {
-            if (!currentUser) {
-                alert('You must be logged in as admin to import data.');
-                return;
-            }
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
