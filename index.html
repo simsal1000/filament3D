@@ -194,12 +194,12 @@
     <!-- MAIN SECTION: Spools List & Search -->
     <div class="card">
         <h3>
-            <span style="font-size: 0.85rem; font-weight: normal;" id="totaleBobine">Spools = 0 (0 types)</span>
+            <span style="font-size: 0.95rem; font-weight: normal;">Spools = <span id="totaleBobine">0 (0 types)</span></span>
             <button onclick="toggleAddForm()" class="btn-success" id="toggleAddBtn" style="display: none; width: auto; padding: 6px 12px; font-size: 0.85rem; margin:0;">➕ Add New Spool</button>
         </h3>
         
         <!-- Search & Filter Bar -->
-        <div class="row" style="margin-bottom: 12px;">
+        <div class="row" style="margin-bottom: 8px;">
             <div style="flex: 2;">
                 <input type="text" id="filtroRicerca" placeholder="🔍 Search by brand, material, type or color..." oninput="mostraBobine()" style="margin:0;">
             </div>
@@ -213,6 +213,11 @@
                     <option value="">All Types</option>
                 </select>
             </div>
+        </div>
+
+        <!-- Chromatic Sort Toggle Button -->
+        <div style="margin-bottom: 12px; display: flex; justify-content: flex-end;">
+            <button onclick="toggleChromaticSort()" id="sortColorBtn" class="btn-secondary" style="width: auto; padding: 6px 12px; font-size: 0.80rem; margin:0; background: #4b5563;">🎨 Sort by Color: Off</button>
         </div>
 
         <div id="listaBobine"></div>
@@ -381,6 +386,7 @@
         let bobine = [];
         let selectedHex = '#ff0000';
         let editingFirebaseId = null;
+        let isChromaticSort = false;
 
         let defaultBrands = ['eSUN', 'Prusa', 'Bambu Lab', 'Sunlu', 'Polymaker', 'Creality', 'Anycubic', 'Extrudr', 'Overture'];
         let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
@@ -420,6 +426,42 @@
             } else {
                 pulisciForm();
             }
+        }
+
+        function toggleChromaticSort() {
+            isChromaticSort = !isChromaticSort;
+            const btn = document.getElementById('sortColorBtn');
+            if (isChromaticSort) {
+                btn.innerText = "🎨 Sort by Color: On";
+                btn.style.background = "var(--primary)";
+            } else {
+                btn.innerText = "🎨 Sort by Color: Off";
+                btn.style.background = "#4b5563";
+            }
+            mostraBobine();
+        }
+
+        function hexToHsl(hex) {
+            let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            if (!result) return [0, 0, 0];
+            let r = parseInt(result[1], 16) / 255;
+            let g = parseInt(result[2], 16) / 255;
+            let b = parseInt(result[3], 16) / 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) {
+                h = s = 0; // achromatic
+            } else {
+                let d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [h * 360, s, l];
         }
 
         function caricaBobinaPerModifica(firebaseId) {
@@ -842,9 +884,24 @@
                 return matchTesto && matchMateriale && matchTipo;
             });
 
+            if (isChromaticSort) {
+                bobineFiltrate.sort((a, b) => {
+                    let hslA = hexToHsl(a.coloreHex || '#ffffff');
+                    let hslB = hexToHsl(b.coloreHex || '#ffffff');
+                    // Sort by Hue first, then Lightness, then Saturation
+                    if (Math.abs(hslA[0] - hslB[0]) > 2) {
+                        return hslA[0] - hslB[0];
+                    }
+                    if (Math.abs(hslA[2] - hslB[2]) > 0.05) {
+                        return hslA[2] - hslB[2];
+                    }
+                    return hslA[1] - hslB[1];
+                });
+            }
+
             let totalQuantity = bobineFiltrate.reduce((sum, b) => sum + (parseInt(b.quantita || b.quantity) || 1), 0);
             let uniqueTypes = bobineFiltrate.length;
-            document.getElementById('totaleBobine').innerText = `Spools = ${totalQuantity} (${uniqueTypes} types)`;
+            document.getElementById('totaleBobine').innerText = `${totalQuantity} (${uniqueTypes} types)`;
 
             if (bobineFiltrate.length === 0) {
                 container.innerHTML = '<p style="color: #6b7280; text-align: center;">No spools found.</p>';
