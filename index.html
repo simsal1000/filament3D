@@ -96,6 +96,7 @@
             font-size: 0.75rem;
             font-weight: bold;
             display: inline-block;
+            border: 1px solid transparent;
         }
         .badge-type {
             background: #f3e8ff;
@@ -462,6 +463,18 @@
                 h /= 6;
             }
             return [h * 360, s, l];
+        }
+
+        function getMaterialBadgeStyle(typeStr) {
+            const t = (typeStr || '').toLowerCase();
+            if (t === 'transparent' || t === 'trasparente') {
+                return 'background-color: #ffffff; color: #000000; border-color: #000000;';
+            } else if (t === 'wood' || t === 'legno') {
+                return 'background-color: #f5f5dc; color: #78350f; border-color: #d97706;';
+            } else if (t === 'metal' || t === 'metallo') {
+                return 'background-color: #e5e7eb; color: #374151; border-color: #9ca3af;';
+            }
+            return ''; // Default CSS (.badge)
         }
 
         function caricaBobinaPerModifica(firebaseId) {
@@ -888,7 +901,6 @@
                 bobineFiltrate.sort((a, b) => {
                     let hslA = hexToHsl(a.coloreHex || '#ffffff');
                     let hslB = hexToHsl(b.coloreHex || '#ffffff');
-                    // Sort by Hue first, then Lightness, then Saturation
                     if (Math.abs(hslA[0] - hslB[0]) > 2) {
                         return hslA[0] - hslB[0];
                     }
@@ -932,6 +944,9 @@
                 let hexColor = b.coloreHex || '#cccccc';
                 let numBobine = b.quantita || b.quantity || 1;
                 let pesoRimasto = b.peso !== undefined ? b.peso : (b.weight || 1000);
+                
+                // Stile dinamico badge materiale in base al tipo
+                let matBadgeStyle = getMaterialBadgeStyle(b.type);
 
                 const div = document.createElement('div');
                 div.className = 'filament-item';
@@ -940,7 +955,7 @@
                         <div class="filament-info" style="flex: 1;">
                             <h4 style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: 0; overflow: hidden;">
                                 <span class="color-dot" onclick="toggleDettagli('${b.firebaseId}')" style="background-color: ${hexColor};" title="Click to expand details"></span>
-                                <span class="badge">${b.materiale || b.material || "PLA"}</span>
+                                <span class="badge" style="${matBadgeStyle}">${b.materiale || b.material || "PLA"}</span>
                                 <span class="badge-brand">${b.produttore || b.brand || "Unknown"}</span>
                                 ${b.type ? `<span class="badge-type">${b.type}</span>` : ''}
                                 <span style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${b.colore || b.color || ""}</span>
