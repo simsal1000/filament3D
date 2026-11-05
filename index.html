@@ -166,6 +166,16 @@
             font-size: 0.9rem;
         }
         #syncStatus { font-size: 0.8rem; text-align: center; color: #10b981; margin-bottom: 10px; font-weight: bold; }
+    
+        @media (max-width: 768px) {
+            .desktop-color-picker-group { display: none !important; }
+            .mobile-color-grid-container { display: block !important; }
+        }
+        @media (min-width: 769px) {
+            .desktop-color-picker-group { display: block !important; }
+            .mobile-color-grid-container { display: none !important; }
+        }
+
     </style>
 </head>
 <body>
@@ -281,7 +291,7 @@
                 <label>Color Name</label>
                 <input type="text" id="colore" placeholder="e.g., Fire Red">
             </div>
-            <div>
+            <div class="desktop-color-picker-group">
                 <label>Color Picker (RGB)</label>
                 <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
                     <input type="color" id="nativeColorPicker" value="#ff0000" onchange="updateColorFromPicker(this.value)" style="width: 50px; height: 38px; padding: 0; cursor: pointer; border: 1px solid #d1d5db; border-radius: 8px;">
@@ -289,18 +299,116 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Mobile 8x8 Color Grid (Visible only on mobile) -->
+        <div class="mobile-color-grid-container" style="display: none;">
+            <label style="margin-top: 8px;">Color Grid (8x8)</label>
+            <div style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 4px;">
+                <div onclick="updateColorFromPicker('#000000')" style="aspect-ratio: 1; background: #000000; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#000000"></div>
+                <div onclick="updateColorFromPicker('#1a1a1a')" style="aspect-ratio: 1; background: #1a1a1a; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#1a1a1a"></div>
+                <div onclick="updateColorFromPicker('#333333')" style="aspect-ratio: 1; background: #333333; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#333333"></div>
+                <div onclick="updateColorFromPicker('#4d4d4d')" style="aspect-ratio: 1; background: #4d4d4d; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#4d4d4d"></div>
+                <div onclick="updateColorFromPicker('#666666')" style="aspect-ratio: 1; background: #666666; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#666666"></div>
+                <div onclick="updateColorFromPicker('#808080')" style="aspect-ratio: 1; background: #808080; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#808080"></div>
+                <div onclick="updateColorFromPicker('#999999')" style="aspect-ratio: 1; background: #999999; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#999999"></div>
+                <div onclick="updateColorFromPicker('#b3b3b3')" style="aspect-ratio: 1; background: #b3b3b3; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#b3b3b3"></div>
+                <div onclick="updateColorFromPicker('#cccccc')" style="aspect-ratio: 1; background: #cccccc; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#cccccc"></div>
+                <div onclick="updateColorFromPicker('#e6e6e6')" style="aspect-ratio: 1; background: #e6e6e6; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#e6e6e6"></div>
+                <div onclick="updateColorFromPicker('#f2f2f2')" style="aspect-ratio: 1; background: #f2f2f2; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#f2f2f2"></div>
+                <div onclick="updateColorFromPicker('#ffffff')" style="aspect-ratio: 1; background: #ffffff; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffffff"></div>
+                <div onclick="updateColorFromPicker('#5c4033')" style="aspect-ratio: 1; background: #5c4033; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#5c4033"></div>
+                <div onclick="updateColorFromPicker('#8b4513')" style="aspect-ratio: 1; background: #8b4513; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#8b4513"></div>
+                <div onclick="updateColorFromPicker('#a0522d')" style="aspect-ratio: 1; background: #a0522d; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#a0522d"></div>
+                <div onclick="updateColorFromPicker('#d2691e')" style="aspect-ratio: 1; background: #d2691e; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#d2691e"></div>
+                <div onclick="updateColorFromPicker('#800000')" style="aspect-ratio: 1; background: #800000; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#800000"></div>
+                <div onclick="updateColorFromPicker('#a52a2a')" style="aspect-ratio: 1; background: #a52a2a; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#a52a2a"></div>
+                <div onclick="updateColorFromPicker('#b22222')" style="aspect-ratio: 1; background: #b22222; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#b22222"></div>
+                <div onclick="updateColorFromPicker('#dc143c')" style="aspect-ratio: 1; background: #dc143c; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#dc143c"></div>
+                <div onclick="updateColorFromPicker('#ff0000')" style="aspect-ratio: 1; background: #ff0000; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff0000"></div>
+                <div onclick="updateColorFromPicker('#ff4500')" style="aspect-ratio: 1; background: #ff4500; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff4500"></div>
+                <div onclick="updateColorFromPicker('#ff6347')" style="aspect-ratio: 1; background: #ff6347; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff6347"></div>
+                <div onclick="updateColorFromPicker('#ff7f50')" style="aspect-ratio: 1; background: #ff7f50; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff7f50"></div>
+                <div onclick="updateColorFromPicker('#ff1493')" style="aspect-ratio: 1; background: #ff1493; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff1493"></div>
+                <div onclick="updateColorFromPicker('#ff69b4')" style="aspect-ratio: 1; background: #ff69b4; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff69b4"></div>
+                <div onclick="updateColorFromPicker('#db7093')" style="aspect-ratio: 1; background: #db7093; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#db7093"></div>
+                <div onclick="updateColorFromPicker('#c71585')" style="aspect-ratio: 1; background: #c71585; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#c71585"></div>
+                <div onclick="updateColorFromPicker('#ffb6c1')" style="aspect-ratio: 1; background: #ffb6c1; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffb6c1"></div>
+                <div onclick="updateColorFromPicker('#ffc0cb')" style="aspect-ratio: 1; background: #ffc0cb; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffc0cb"></div>
+                <div onclick="updateColorFromPicker('#dda0dd')" style="aspect-ratio: 1; background: #dda0dd; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#dda0dd"></div>
+                <div onclick="updateColorFromPicker('#ee82ee')" style="aspect-ratio: 1; background: #ee82ee; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ee82ee"></div>
+                <div onclick="updateColorFromPicker('#ff8c00')" style="aspect-ratio: 1; background: #ff8c00; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff8c00"></div>
+                <div onclick="updateColorFromPicker('#ffa500')" style="aspect-ratio: 1; background: #ffa500; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffa500"></div>
+                <div onclick="updateColorFromPicker('#ffb300')" style="aspect-ratio: 1; background: #ffb300; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffb300"></div>
+                <div onclick="updateColorFromPicker('#ffc107')" style="aspect-ratio: 1; background: #ffc107; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffc107"></div>
+                <div onclick="updateColorFromPicker('#ffd700')" style="aspect-ratio: 1; background: #ffd700; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffd700"></div>
+                <div onclick="updateColorFromPicker('#ffeb3b')" style="aspect-ratio: 1; background: #ffeb3b; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffeb3b"></div>
+                <div onclick="updateColorFromPicker('#ffea00')" style="aspect-ratio: 1; background: #ffea00; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffea00"></div>
+                <div onclick="updateColorFromPicker('#fff176')" style="aspect-ratio: 1; background: #fff176; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#fff176"></div>
+                <div onclick="updateColorFromPicker('#808000')" style="aspect-ratio: 1; background: #808000; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#808000"></div>
+                <div onclick="updateColorFromPicker('#9acd32')" style="aspect-ratio: 1; background: #9acd32; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#9acd32"></div>
+                <div onclick="updateColorFromPicker('#adff2f')" style="aspect-ratio: 1; background: #adff2f; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#adff2f"></div>
+                <div onclick="updateColorFromPicker('#7fff00')" style="aspect-ratio: 1; background: #7fff00; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#7fff00"></div>
+                <div onclick="updateColorFromPicker('#32cd32')" style="aspect-ratio: 1; background: #32cd32; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#32cd32"></div>
+                <div onclick="updateColorFromPicker('#008000')" style="aspect-ratio: 1; background: #008000; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#008000"></div>
+                <div onclick="updateColorFromPicker('#006400')" style="aspect-ratio: 1; background: #006400; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#006400"></div>
+                <div onclick="updateColorFromPicker('#2e8b57')" style="aspect-ratio: 1; background: #2e8b57; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#2e8b57"></div>
+                <div onclick="updateColorFromPicker('#00fa9a')" style="aspect-ratio: 1; background: #00fa9a; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#00fa9a"></div>
+                <div onclick="updateColorFromPicker('#00ff7f')" style="aspect-ratio: 1; background: #00ff7f; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#00ff7f"></div>
+                <div onclick="updateColorFromPicker('#3cb371')" style="aspect-ratio: 1; background: #3cb371; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#3cb371"></div>
+                <div onclick="updateColorFromPicker('#20b2aa')" style="aspect-ratio: 1; background: #20b2aa; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#20b2aa"></div>
+                <div onclick="updateColorFromPicker('#008b8b')" style="aspect-ratio: 1; background: #008b8b; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#008b8b"></div>
+                <div onclick="updateColorFromPicker('#008080')" style="aspect-ratio: 1; background: #008080; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#008080"></div>
+                <div onclick="updateColorFromPicker('#00ffff')" style="aspect-ratio: 1; background: #00ffff; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#00ffff"></div>
+                <div onclick="updateColorFromPicker('#00bcd4')" style="aspect-ratio: 1; background: #00bcd4; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#00bcd4"></div>
+                <div onclick="updateColorFromPicker('#03a9f4')" style="aspect-ratio: 1; background: #03a9f4; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#03a9f4"></div>
+                <div onclick="updateColorFromPicker('#00bfff')" style="aspect-ratio: 1; background: #00bfff; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#00bfff"></div>
+                <div onclick="updateColorFromPicker('#1e90ff')" style="aspect-ratio: 1; background: #1e90ff; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#1e90ff"></div>
+                <div onclick="updateColorFromPicker('#4169e1')" style="aspect-ratio: 1; background: #4169e1; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#4169e1"></div>
+                <div onclick="updateColorFromPicker('#0000ff')" style="aspect-ratio: 1; background: #0000ff; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#0000ff"></div>
+                <div onclick="updateColorFromPicker('#00008b')" style="aspect-ratio: 1; background: #00008b; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#00008b"></div>
+                <div onclick="updateColorFromPicker('#000080')" style="aspect-ratio: 1; background: #000080; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#000080"></div>
+                <div onclick="updateColorFromPicker('#191970')" style="aspect-ratio: 1; background: #191970; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#191970"></div>
+                <div onclick="updateColorFromPicker('#483d8b')" style="aspect-ratio: 1; background: #483d8b; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#483d8b"></div>
+                <div onclick="updateColorFromPicker('#6a5acd')" style="aspect-ratio: 1; background: #6a5acd; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#6a5acd"></div>
+                <div onclick="updateColorFromPicker('#7b68ee')" style="aspect-ratio: 1; background: #7b68ee; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#7b68ee"></div>
+                <div onclick="updateColorFromPicker('#8a2be2')" style="aspect-ratio: 1; background: #8a2be2; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#8a2be2"></div>
+                <div onclick="updateColorFromPicker('#9400d3')" style="aspect-ratio: 1; background: #9400d3; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#9400d3"></div>
+                <div onclick="updateColorFromPicker('#9932cc')" style="aspect-ratio: 1; background: #9932cc; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#9932cc"></div>
+                <div onclick="updateColorFromPicker('#8b008b')" style="aspect-ratio: 1; background: #8b008b; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#8b008b"></div>
+                <div onclick="updateColorFromPicker('#800080')" style="aspect-ratio: 1; background: #800080; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#800080"></div>
+                <div onclick="updateColorFromPicker('#4b0082')" style="aspect-ratio: 1; background: #4b0082; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#4b0082"></div>
+                <div onclick="updateColorFromPicker('#ba55d3')" style="aspect-ratio: 1; background: #ba55d3; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ba55d3"></div>
+                <div onclick="updateColorFromPicker('#da70d6')" style="aspect-ratio: 1; background: #da70d6; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#da70d6"></div>
+                <div onclick="updateColorFromPicker('#dda0dd')" style="aspect-ratio: 1; background: #dda0dd; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#dda0dd"></div>
+                <div onclick="updateColorFromPicker('#ff00ff')" style="aspect-ratio: 1; background: #ff00ff; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ff00ff"></div>
+                <div onclick="updateColorFromPicker('#c71585')" style="aspect-ratio: 1; background: #c71585; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#c71585"></div>
+                <div onclick="updateColorFromPicker('#b0e0e6')" style="aspect-ratio: 1; background: #b0e0e6; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#b0e0e6"></div>
+                <div onclick="updateColorFromPicker('#afeeee')" style="aspect-ratio: 1; background: #afeeee; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#afeeee"></div>
+                <div onclick="updateColorFromPicker('#d4af37')" style="aspect-ratio: 1; background: #d4af37; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#d4af37"></div>
+                <div onclick="updateColorFromPicker('#ffd700')" style="aspect-ratio: 1; background: #ffd700; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#ffd700"></div>
+                <div onclick="updateColorFromPicker('#c0c0c0')" style="aspect-ratio: 1; background: #c0c0c0; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#c0c0c0"></div>
+                <div onclick="updateColorFromPicker('#e5e7eb')" style="aspect-ratio: 1; background: #e5e7eb; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#e5e7eb"></div>
+                <div onclick="updateColorFromPicker('#b87333')" style="aspect-ratio: 1; background: #b87333; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#b87333"></div>
+                <div onclick="updateColorFromPicker('#cd7f32')" style="aspect-ratio: 1; background: #cd7f32; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#cd7f32"></div>
+                <div onclick="updateColorFromPicker('#a9a9a9')" style="aspect-ratio: 1; background: #a9a9a9; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#a9a9a9"></div>
+                <div onclick="updateColorFromPicker('#708090')" style="aspect-ratio: 1; background: #708090; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#708090"></div>
+            </div>
+        </div>
+
+
+
 
         <div class="row" style="margin-top: 8px;">
             <div>
-                <label>Rosso (Red)</label>
+                <label>Red</label>
                 <input type="number" id="rgbR" min="0" max="255" value="255" oninput="updateColorFromRGB()" style="margin:0;">
             </div>
             <div>
-                <label>Verde (Green)</label>
+                <label>Green</label>
                 <input type="number" id="rgbG" min="0" max="255" value="0" oninput="updateColorFromRGB()" style="margin:0;">
             </div>
             <div>
-                <label>Blu (Blue)</label>
+                <label>Blue</label>
                 <input type="number" id="rgbB" min="0" max="255" value="0" oninput="updateColorFromRGB()" style="margin:0;">
             </div>
         </div>
