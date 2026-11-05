@@ -115,6 +115,7 @@
             font-size: 0.75rem;
             font-weight: bold;
             display: inline-block;
+            cursor: pointer;
         }
         .delete-btn {
             background: var(--danger);
@@ -389,6 +390,7 @@
         let selectedHex = '#ff0000';
         let editingFirebaseId = null;
         let isChromaticSort = false;
+        let globalBrandExpanded = false; // Tracks if all brand tags are expanded globally
 
         let defaultBrands = ['eSUN', 'Prusa', 'Bambu Lab', 'Sunlu', 'Polymaker', 'Creality', 'Anycubic', 'Extrudr', 'Overture'];
         let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
@@ -443,6 +445,11 @@
                 btn.innerText = "🎨 Sort by Color: Off";
                 btn.style.background = "#4b5563";
             }
+            mostraBobine();
+        }
+
+        function toggleBrandGlobalExpand() {
+            globalBrandExpanded = !globalBrandExpanded;
             mostraBobine();
         }
 
@@ -949,6 +956,8 @@
                 let pesoRimasto = b.peso !== undefined ? b.peso : (b.weight || 1000);
                 
                 let matBadgeStyle = getMaterialBadgeStyle(b.type);
+                let fullBrand = b.produttore || b.brand || "Unknown";
+                let brandDisplay = globalBrandExpanded ? fullBrand : (fullBrand.length > 4 ? fullBrand.substring(0, 4) : fullBrand);
 
                 const div = document.createElement('div');
                 div.className = 'filament-item';
@@ -958,7 +967,7 @@
                             <h4 style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; margin: 0; overflow: hidden;">
                                 <span class="color-dot" onclick="toggleDettagli('${b.firebaseId}')" style="background-color: ${hexColor};" title="Click to expand details"></span>
                                 <span class="badge" style="${matBadgeStyle}">${b.materiale || b.material || "PLA"}</span>
-                                <span class="badge-brand">${b.produttore || b.brand || "Unknown"}</span>
+                                <span class="badge-brand" onclick="toggleBrandGlobalExpand()" title="Click to toggle full/short brand names">${brandDisplay}</span>
                                 ${b.type ? `<span class="badge-type">${b.type}</span>` : ''}
                                 <span style="font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${b.colore || b.color || ""}</span>
                             </h4>
