@@ -179,16 +179,32 @@
         </div>
     </div>
 
-    <!-- Login Modal / Panel -->
+    <!-- Login Modal / Panel (PIN first, fallback to Password) -->
     <div class="card" id="loginModalCard" style="display: none; border: 2px solid var(--primary);">
         <h3 style="font-size: 1rem; margin-bottom: 8px;">Admin Authentication</h3>
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="admin@example.com" style="margin-bottom: 6px;">
-        <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" style="margin-bottom: 10px;">
-        <div style="display: flex; gap: 8px;">
-            <button onclick="loginAdmin()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Login</button>
-            <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
+        
+        <!-- PIN Section -->
+        <div id="pinSection">
+            <label>Enter 4-Digit PIN</label>
+            <input type="password" id="pinInput" maxlength="4" placeholder="••••" style="text-align: center; font-size: 1.5rem; letter-spacing: 8px; margin-bottom: 10px;">
+            <div style="display: flex; gap: 8px;">
+                <button onclick="verifyPin()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Verify PIN</button>
+                <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
+            </div>
+            <p id="pinAttemptsMsg" style="font-size: 0.8rem; color: #6b7280; text-align: center; margin-top: 8px;"></p>
+        </div>
+
+        <!-- Password Fallback Section -->
+        <div id="passwordSection" style="display: none;">
+            <p style="font-size: 0.85rem; color: var(--danger); margin-top: 0;">⚠️ PIN locked due to incorrect attempts. Use Email & Password.</p>
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="admin@example.com" style="margin-bottom: 6px;">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" style="margin-bottom: 10px;">
+            <div style="display: flex; gap: 8px;">
+                <button onclick="loginAdminEmail()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Login</button>
+                <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
+            </div>
         </div>
     </div>
 
@@ -388,6 +404,10 @@
         let selectedHex = '#ff0000';
         let editingFirebaseId = null;
         let isChromaticSort = false;
+        let pinFailedAttempts = 0;
+
+        // SHA-256 hash for PIN "1333"
+        const CORRECT_PIN_HASH = "6fdd9b073bc00a5da50bbb71825e6461116845cf1fbb3c84cd22aed47a75fdc2";
 
         let defaultBrands = ['eSUN', 'Prusa', 'Bambu Lab', 'Sunlu', 'Polymaker', 'Creality', 'Anycubic', 'Extrudr', 'Overture'];
         let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
@@ -451,7 +471,7 @@
             let max = Math.max(r, g, b), min = Math.min(r, g, b);
             let h, s, l = (max + min) / 2;
             if (max === min) {
-                h = s = 0; // achromatic
+                h = s = 0;
             } else {
                 let d = max - min;
                 s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -474,7 +494,41 @@
             } else if (t === 'metal' || t === 'metallo') {
                 return 'background-color: #e5e7eb; color: #374151; border-color: #9ca3af;';
             }
-            return ''; // Default CSS (.badge)
+            return '';
+        }
+
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function verifyPin() {
+            const pinVal = document.getElementById('pinInput').value.trim();
+            const hashedInput = await sha256(pinVal);
+
+            if (hashedInput === CORRECT_PIN_HASH) {
+                document.getElementById('loginModalCard').style.display = 'none';
+                document.getElementById('pinInput').value = '';
+                pinFailedAttempts = 0;
+                if (!currentUser) {
+                    alert('PIN correct! Please enter your admin email & password once to authorize session.');
+                    document.getElementById('pinSection').style.display = 'none';
+                    document.getElementById('passwordSection').style.display = 'block';
+                    document.getElementById('loginModalCard').style.display = 'block';
+                }
+            } else {
+                pinFailedAttempts++;
+                document.getElementById('pinInput').value = '';
+                if (pinFailedAttempts >= 2) {
+                    document.getElementById('pinSection').style.display = 'none';
+                    document.getElementById('passwordSection').style.display = 'block';
+                    document.getElementById('pinAttemptsMsg').innerText = '';
+                } else {
+                    document.getElementById('pinAttemptsMsg').innerText = `Incorrect PIN. ${2 - pinFailedAttempts} attempt remaining.`;
+                }
+            }
         }
 
         function caricaBobinaPerModifica(firebaseId) {
@@ -945,7 +999,6 @@
                 let numBobine = b.quantita || b.quantity || 1;
                 let pesoRimasto = b.peso !== undefined ? b.peso : (b.weight || 1000);
                 
-                // Stile dinamico badge materiale in base al tipo
                 let matBadgeStyle = getMaterialBadgeStyle(b.type);
 
                 const div = document.createElement('div');
@@ -1033,10 +1086,17 @@
 
         function toggleAuthModal() {
             const modal = document.getElementById('loginModalCard');
-            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+            const isVisible = modal.style.display === 'block';
+            modal.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) {
+                if (pinFailedAttempts < 2) {
+                    document.getElementById('pinSection').style.display = 'block';
+                    document.getElementById('passwordSection').style.display = 'none';
+                }
+            }
         }
 
-        function loginAdmin() {
+        function loginAdminEmail() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             if (!email || !password) {
