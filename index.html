@@ -179,24 +179,24 @@
         </div>
     </div>
 
-    <!-- Login Modal / Panel (PIN first, fallback to Password) -->
+    <!-- Login Modal / Panel -->
     <div class="card" id="loginModalCard" style="display: none; border: 2px solid var(--primary);">
         <h3 style="font-size: 1rem; margin-bottom: 8px;">Admin Authentication</h3>
         
-        <!-- PIN Section -->
+        <!-- Password Section -->
         <div id="pinSection">
-            <label>Enter 4-Digit PIN</label>
-            <input type="password" id="pinInput" maxlength="4" placeholder="••••" style="text-align: center; font-size: 1.5rem; letter-spacing: 8px; margin-bottom: 10px;">
+            <label>Password</label>
+            <input type="password" id="pinInput" placeholder="••••••••" style="margin-bottom: 10px;">
             <div style="display: flex; gap: 8px;">
-                <button onclick="verifyPin()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Verify PIN</button>
+                <button onclick="verifyPin()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Submit</button>
                 <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
             </div>
             <p id="pinAttemptsMsg" style="font-size: 0.8rem; color: #6b7280; text-align: center; margin-top: 8px;"></p>
         </div>
 
-        <!-- Password Fallback Section -->
+        <!-- Fallback Section -->
         <div id="passwordSection" style="display: none;">
-            <p id="passwordSectionMsg" style="font-size: 0.85rem; color: var(--danger); margin-top: 0;">⚠️ PIN locked due to incorrect attempts. Use Email & Password.</p>
+            <p id="passwordSectionMsg" style="font-size: 0.85rem; color: var(--danger); margin-top: 0;">⚠️ Verification locked due to incorrect attempts. Use Email & Password.</p>
             <label>Email</label>
             <input type="email" id="loginEmail" placeholder="admin@example.com" style="margin-bottom: 6px;">
             <label>Password</label>
@@ -406,8 +406,8 @@
         let isChromaticSort = false;
         let pinFailedAttempts = 0;
 
-        // SHA-256 hash for PIN "1333"
-        const CORRECT_PIN_HASH = "6fdd9b073bc00a5da50bbb71825e6461116845cf1fbb3c84cd22aed47a75fdc2";
+        // SHA-256 hash for password "1010"
+        const CORRECT_PIN_HASH = "7a5df5ffa0dec2228d90b8d0a0f1b0767b748b0a41314c123075b8289e4e053f";
 
         let defaultBrands = ['eSUN', 'Prusa', 'Bambu Lab', 'Sunlu', 'Polymaker', 'Creality', 'Anycubic', 'Extrudr', 'Overture'];
         let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
@@ -417,7 +417,6 @@
         let materials = [...defaultMaterials];
         let filamentTypes = [...defaultTypes];
 
-        // Real-time listener for settings lists in Firestore
         db.collection("settings").doc("lists").onSnapshot((doc) => {
             if (doc.exists) {
                 const data = doc.data();
@@ -512,31 +511,27 @@
                 document.getElementById('pinInput').value = '';
                 pinFailedAttempts = 0;
                 
-                // Check if we have saved admin credentials in localStorage
                 const savedEmail = localStorage.getItem('filamentAdminEmail');
                 const savedPass = localStorage.getItem('filamentAdminPass');
 
                 if (savedEmail && savedPass) {
-                    // Auto login in background!
                     auth.signInWithEmailAndPassword(savedEmail, savedPass)
                         .then(() => {
                             document.getElementById('loginModalCard').style.display = 'none';
                         })
                         .catch((err) => {
-                            // If stored credentials failed, prompt manually
                             showPasswordPrompt("Saved credentials expired or invalid. Please re-enter.");
                         });
                 } else {
-                    // First time: ask for email/password once and store them
-                    showPasswordPrompt("PIN correct! Please enter your admin email & password once.");
+                    showPasswordPrompt("Verification correct! Please enter your admin email & password once.");
                 }
             } else {
                 pinFailedAttempts++;
                 document.getElementById('pinInput').value = '';
                 if (pinFailedAttempts >= 2) {
-                    showPasswordPrompt("⚠️ PIN locked due to incorrect attempts. Use Email & Password.");
+                    showPasswordPrompt("⚠️ Verification locked due to incorrect attempts. Use Email & Password.");
                 } else {
-                    document.getElementById('pinAttemptsMsg').innerText = `Incorrect PIN. ${2 - pinFailedAttempts} attempt remaining.`;
+                    document.getElementById('pinAttemptsMsg').innerText = `Incorrect password. ${2 - pinFailedAttempts} attempt remaining.`;
                 }
             }
         }
@@ -1123,7 +1118,6 @@
             }
             auth.signInWithEmailAndPassword(email, password)
                 .then((userCredential) => {
-                    // Save credentials in localStorage so next time PIN auth logs in automatically in background!
                     localStorage.setItem('filamentAdminEmail', email);
                     localStorage.setItem('filamentAdminPass', password);
 
@@ -1137,7 +1131,6 @@
         }
 
         function logoutAdmin() {
-            // Clear stored admin session credentials on logout
             localStorage.removeItem('filamentAdminEmail');
             localStorage.removeItem('filamentAdminPass');
             auth.signOut().catch((error) => {
