@@ -118,10 +118,10 @@
         }
         .delete-btn {
             background: var(--danger);
-            width: auto;
-            padding: 4px 12px;
-            margin: 0;
-            font-size: 0.85rem;
+            width: 100%;
+            padding: 10px;
+            margin-top: 12px;
+            font-size: 1rem;
         }
         .btn-secondary { background: #4b5563; }
         .btn-success { background: #10b981; }
@@ -226,7 +226,7 @@
 
     <!-- SEPARATE SECTION: Add New Spool Form -->
     <div class="card" id="addFormCard" style="display: none; border: 2px solid var(--primary);">
-        <h3>
+        <h3 id="formTitle">
             Add New Spool
             <div style="display: flex; gap: 6px;">
                 <button onclick="toggleSettingsPanel()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">⚙️ Edit Lists</button>
@@ -357,6 +357,7 @@
         <textarea id="note" rows="2" placeholder="e.g., Good adhesion, print slow..."></textarea>
 
         <button id="saveButton" onclick="salvaBobina()">Save Spool</button>
+        <button id="deleteInFormBtn" class="delete-btn" onclick="eliminaBobinaCorrente()" style="display: none;">🗑️ Delete Spool</button>
     </div>
 
     <!-- Backup & Restore -->
@@ -420,8 +421,12 @@
 
         function toggleAddForm() {
             const card = document.getElementById('addFormCard');
-            card.style.display = card.style.display === 'block' ? 'none' : 'block';
-            if (card.style.display === 'block') {
+            const isOpening = card.style.display !== 'block';
+            card.style.display = isOpening ? 'block' : 'none';
+            if (isOpening) {
+                if (!editingFirebaseId) {
+                    pulisciForm();
+                }
                 window.scrollTo({ top: card.offsetTop, behavior: 'smooth' });
             } else {
                 pulisciForm();
@@ -500,6 +505,7 @@
             updateColorFromPicker(selectedHex);
 
             document.getElementById('saveButton').innerText = "Update Spool";
+            document.getElementById('deleteInFormBtn').style.display = 'block';
 
             const card = document.getElementById('addFormCard');
             card.style.display = 'block';
@@ -833,6 +839,7 @@
         function pulisciForm() {
             editingFirebaseId = null;
             document.getElementById('saveButton').innerText = "Save Spool";
+            document.getElementById('deleteInFormBtn').style.display = 'none';
             document.getElementById('colore').value = '';
             document.getElementById('quantita').value = '1';
             document.getElementById('peso').value = '1000';
@@ -846,13 +853,18 @@
             document.getElementById('note').value = '';
         }
 
-        function eliminaBobina(firebaseId) {
+        function eliminaBobinaCorrente() {
             if (!currentUser) {
                 alert('You must be logged in as admin to delete spools.');
                 return;
             }
+            if (!editingFirebaseId) return;
             if (confirm('Are you sure you want to delete this spool?')) {
-                db.collection("bobine").doc(firebaseId).delete()
+                db.collection("bobine").doc(editingFirebaseId).delete()
+                    .then(() => {
+                        pulisciForm();
+                        toggleAddForm();
+                    })
                     .catch((error) => {
                         alert("Error deleting from cloud: " + error.message);
                     });
@@ -954,7 +966,6 @@
                         <div style="display: flex; gap: 4px; align-items: center; flex-shrink: 0;">
                             ${currentUser ? `
                                 <button onclick="caricaBobinaPerModifica('${b.firebaseId}')" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: var(--primary); border-radius: 6px; margin: 0; border: none; color: white; cursor: pointer;" title="Edit">✏️</button>
-                                <button class="delete-btn" onclick="eliminaBobina('${b.firebaseId}')" style="width: auto; padding: 4px 8px; font-size: 0.75rem; background: var(--danger); border-radius: 6px; margin: 0;" title="Delete">🗑️</button>
                             ` : ''}
                         </div>
                     </div>
