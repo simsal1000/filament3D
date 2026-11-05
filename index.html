@@ -124,7 +124,7 @@
             font-size: 0.85rem;
         }
         .btn-secondary { background: #4b5563; }
-        .btn-success { background: var(--success); }
+        .btn-success { background: #10b981; }
         .backup-container { display: flex; gap: 8px; }
 
         .settings-panel {
@@ -175,36 +175,20 @@
     <div class="card" id="authCard" style="padding: 10px 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; background: #fff;">
         <div id="authUserInfo" style="font-size: 0.85rem; color: #4b5563;">🔒 Read-Only Mode (Not Logged In)</div>
         <div id="authActionContainer">
-            <button onclick="toggleAuthModal()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">🔑 Admin Login</button>
+            <button onclick="toggleAuthModal()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">🔑 Login</button>
         </div>
     </div>
 
-    <!-- Login Modal / Panel -->
+    <!-- Login Modal / Panel (Standard Firebase Auth) -->
     <div class="card" id="loginModalCard" style="display: none; border: 2px solid var(--primary);">
-        <h3 style="font-size: 1rem; margin-bottom: 8px;">Admin Authentication</h3>
-        
-        <!-- Password Section -->
-        <div id="pinSection">
-            <label>Password</label>
-            <input type="password" id="pinInput" placeholder="••••••••" style="margin-bottom: 10px;">
-            <div style="display: flex; gap: 8px;">
-                <button onclick="verifyPin()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Submit</button>
-                <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
-            </div>
-            <p id="pinAttemptsMsg" style="font-size: 0.8rem; color: #6b7280; text-align: center; margin-top: 8px;"></p>
-        </div>
-
-        <!-- Fallback Section -->
-        <div id="passwordSection" style="display: none;">
-            <p id="passwordSectionMsg" style="font-size: 0.85rem; color: var(--danger); margin-top: 0;">⚠️ Verification locked due to incorrect attempts. Use Email & Password.</p>
-            <label>Email</label>
-            <input type="email" id="loginEmail" placeholder="admin@example.com" style="margin-bottom: 6px;">
-            <label>Password</label>
-            <input type="password" id="loginPassword" placeholder="••••••••" style="margin-bottom: 10px;">
-            <div style="display: flex; gap: 8px;">
-                <button onclick="loginAdminEmail()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Login</button>
-                <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
-            </div>
+        <h3 style="font-size: 1rem; margin-bottom: 8px;">Admin Login</h3>
+        <label>Email</label>
+        <input type="email" id="loginEmail" placeholder="admin@example.com" style="margin-bottom: 6px;">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" style="margin-bottom: 10px;">
+        <div style="display: flex; gap: 8px;">
+            <button onclick="loginAdminEmail()" style="margin: 0; padding: 8px; font-size: 0.9rem;">Login</button>
+            <button onclick="toggleAuthModal()" class="btn-secondary" style="margin: 0; padding: 8px; font-size: 0.9rem; width: auto;">Cancel</button>
         </div>
     </div>
 
@@ -404,10 +388,6 @@
         let selectedHex = '#ff0000';
         let editingFirebaseId = null;
         let isChromaticSort = false;
-        let pinFailedAttempts = 0;
-
-        // SHA-256 hash for password "1010"
-        const CORRECT_PIN_HASH = "7a5df5ffa0dec2228d90b8d0a0f1b0767b748b0a41314c123075b8289e4e053f";
 
         let defaultBrands = ['eSUN', 'Prusa', 'Bambu Lab', 'Sunlu', 'Polymaker', 'Creality', 'Anycubic', 'Extrudr', 'Overture'];
         let defaultMaterials = ['PLA', 'PLA+', 'PETG', 'ABS', 'ASA', 'TPU', 'Nylon', 'PC', 'PVA', 'WOOD'];
@@ -496,54 +476,6 @@
             return '';
         }
 
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        async function verifyPin() {
-            const pinVal = document.getElementById('pinInput').value.trim();
-            const hashedInput = await sha256(pinVal);
-
-            if (hashedInput === CORRECT_PIN_HASH) {
-                document.getElementById('pinInput').value = '';
-                pinFailedAttempts = 0;
-                
-                const savedEmail = localStorage.getItem('filamentAdminEmail');
-                const savedPass = localStorage.getItem('filamentAdminPass');
-
-                if (savedEmail && savedPass) {
-                    auth.signInWithEmailAndPassword(savedEmail, savedPass)
-                        .then(() => {
-                            document.getElementById('loginModalCard').style.display = 'none';
-                        })
-                        .catch((err) => {
-                            showPasswordPrompt("Saved credentials expired or invalid. Please re-enter.");
-                        });
-                } else {
-                    showPasswordPrompt("Verification correct! Please enter your admin email & password once.");
-                }
-            } else {
-                pinFailedAttempts++;
-                document.getElementById('pinInput').value = '';
-                if (pinFailedAttempts >= 2) {
-                    showPasswordPrompt("⚠️ Verification locked due to incorrect attempts. Use Email & Password.");
-                } else {
-                    document.getElementById('pinAttemptsMsg').innerText = `Incorrect password. ${2 - pinFailedAttempts} attempt remaining.`;
-                }
-            }
-        }
-
-        function showPasswordPrompt(msg) {
-            document.getElementById('pinSection').style.display = 'none';
-            document.getElementById('passwordSection').style.display = 'block';
-            document.getElementById('passwordSectionMsg').innerText = msg;
-            document.getElementById('pinAttemptsMsg').innerText = '';
-            document.getElementById('loginModalCard').style.display = 'block';
-        }
-
         function caricaBobinaPerModifica(firebaseId) {
             const b = bobine.find(item => item.firebaseId === firebaseId);
             if (!b) return;
@@ -572,14 +504,6 @@
             const card = document.getElementById('addFormCard');
             card.style.display = 'block';
             window.scrollTo({ top: card.offsetTop, behavior: 'smooth' });
-        }
-
-        function rgbToHex(rgb) {
-            if (!rgb.startsWith('rgb')) return rgb;
-            let match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-            if (!match) return rgb;
-            function z(x) { return ('0' + parseInt(x).toString(16)).slice(-2); }
-            return '#' + z(match[1]) + z(match[2]) + z(match[3]);
         }
 
         db.collection("bobine").onSnapshot((snapshot) => {
@@ -1090,7 +1014,7 @@
                 if (toggleAddBtn) toggleAddBtn.style.display = 'inline-block';
             } else {
                 userInfo.innerHTML = `🔒 Read-Only Mode (Not Logged In)`;
-                actionContainer.innerHTML = `<button onclick="toggleAuthModal()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">🔑 Admin Login</button>`;
+                actionContainer.innerHTML = `<button onclick="toggleAuthModal()" class="btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.8rem; margin:0;">🔑 Login</button>`;
                 if (toggleAddBtn) toggleAddBtn.style.display = 'none';
                 document.getElementById('addFormCard').style.display = 'none';
             }
@@ -1099,14 +1023,7 @@
 
         function toggleAuthModal() {
             const modal = document.getElementById('loginModalCard');
-            const isVisible = modal.style.display === 'block';
-            modal.style.display = isVisible ? 'none' : 'block';
-            if (!isVisible) {
-                if (pinFailedAttempts < 2) {
-                    document.getElementById('pinSection').style.display = 'block';
-                    document.getElementById('passwordSection').style.display = 'none';
-                }
-            }
+            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
         }
 
         function loginAdminEmail() {
@@ -1117,10 +1034,7 @@
                 return;
             }
             auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    localStorage.setItem('filamentAdminEmail', email);
-                    localStorage.setItem('filamentAdminPass', password);
-
+                .then(() => {
                     document.getElementById('loginEmail').value = '';
                     document.getElementById('loginPassword').value = '';
                     document.getElementById('loginModalCard').style.display = 'none';
@@ -1131,8 +1045,6 @@
         }
 
         function logoutAdmin() {
-            localStorage.removeItem('filamentAdminEmail');
-            localStorage.removeItem('filamentAdminPass');
             auth.signOut().catch((error) => {
                 alert('Error signing out: ' + error.message);
             });
