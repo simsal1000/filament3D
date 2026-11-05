@@ -196,7 +196,7 @@
 
         <!-- Password Fallback Section -->
         <div id="passwordSection" style="display: none;">
-            <p style="font-size: 0.85rem; color: var(--danger); margin-top: 0;">⚠️ PIN locked due to incorrect attempts. Use Email & Password.</p>
+            <p id="passwordSectionMsg" style="font-size: 0.85rem; color: var(--danger); margin-top: 0;">⚠️ PIN locked due to incorrect attempts. Use Email & Password.</p>
             <label>Email</label>
             <input type="email" id="loginEmail" placeholder="admin@example.com" style="margin-bottom: 6px;">
             <label>Password</label>
@@ -509,26 +509,44 @@
             const hashedInput = await sha256(pinVal);
 
             if (hashedInput === CORRECT_PIN_HASH) {
-                document.getElementById('loginModalCard').style.display = 'none';
                 document.getElementById('pinInput').value = '';
                 pinFailedAttempts = 0;
-                if (!currentUser) {
-                    alert('PIN correct! Please enter your admin email & password once to authorize session.');
-                    document.getElementById('pinSection').style.display = 'none';
-                    document.getElementById('passwordSection').style.display = 'block';
-                    document.getElementById('loginModalCard').style.display = 'block';
+                
+                // Check if we have saved admin credentials in localStorage
+                const savedEmail = localStorage.getItem('filamentAdminEmail');
+                const savedPass = localStorage.getItem('filamentAdminPass');
+
+                if (savedEmail && savedPass) {
+                    // Auto login in background!
+                    auth.signInWithEmailAndPassword(savedEmail, savedPass)
+                        .then(() => {
+                            document.getElementById('loginModalCard').style.display = 'none';
+                        })
+                        .catch((err) => {
+                            // If stored credentials failed, prompt manually
+                            showPasswordPrompt("Saved credentials expired or invalid. Please re-enter.");
+                        });
+                } else {
+                    // First time: ask for email/password once and store them
+                    showPasswordPrompt("PIN correct! Please enter your admin email & password once.");
                 }
             } else {
                 pinFailedAttempts++;
                 document.getElementById('pinInput').value = '';
                 if (pinFailedAttempts >= 2) {
-                    document.getElementById('pinSection').style.display = 'none';
-                    document.getElementById('passwordSection').style.display = 'block';
-                    document.getElementById('pinAttemptsMsg').innerText = '';
+                    showPasswordPrompt("⚠️ PIN locked due to incorrect attempts. Use Email & Password.");
                 } else {
                     document.getElementById('pinAttemptsMsg').innerText = `Incorrect PIN. ${2 - pinFailedAttempts} attempt remaining.`;
                 }
             }
+        }
+
+        function showPasswordPrompt(msg) {
+            document.getElementById('pinSection').style.display = 'none';
+            document.getElementById('passwordSection').style.display = 'block';
+            document.getElementById('passwordSectionMsg').innerText = msg;
+            document.getElementById('pinAttemptsMsg').innerText = '';
+            document.getElementById('loginModalCard').style.display = 'block';
         }
 
         function caricaBobinaPerModifica(firebaseId) {
@@ -1104,7 +1122,11 @@
                 return;
             }
             auth.signInWithEmailAndPassword(email, password)
-                .then(() => {
+                .then((userCredential) => {
+                    // Save credentials in localStorage so next time PIN auth logs in automatically in background!
+                    localStorage.setItem('filamentAdminEmail', email);
+                    localStorage.setItem('filamentAdminPass', password);
+
                     document.getElementById('loginEmail').value = '';
                     document.getElementById('loginPassword').value = '';
                     document.getElementById('loginModalCard').style.display = 'none';
@@ -1115,6 +1137,9 @@
         }
 
         function logoutAdmin() {
+            // Clear stored admin session credentials on logout
+            localStorage.removeItem('filamentAdminEmail');
+            localStorage.removeItem('filamentAdminPass');
             auth.signOut().catch((error) => {
                 alert('Error signing out: ' + error.message);
             });
