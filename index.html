@@ -302,7 +302,7 @@
         
         <!-- Mobile 8x8 Color Grid (Visible only on mobile) -->
         <div class="mobile-color-grid-container" style="display: none;">
-            <label style="margin-top: 8px;">Color Grid (8x8)</label>
+            <label style="margin-top: 8px;">Color Picker</label>
             <div style="display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-top: 4px;">
                 <div onclick="updateColorFromPicker('#000000')" style="aspect-ratio: 1; background: #000000; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#000000"></div>
                 <div onclick="updateColorFromPicker('#1a1a1a')" style="aspect-ratio: 1; background: #1a1a1a; border-radius: 4px; cursor: pointer; border: 1px solid #d1d5db;" title="#1a1a1a"></div>
@@ -415,16 +415,20 @@
 
         <div class="row" style="margin-top: 12px;">
             <div>
+                <label>Code ID</label>
+                <input type="text" id="codeId" placeholder="e.g., 10102" style="margin:0;">
+            </div>
+            <div>
                 <label>Quantity</label>
-                <input type="number" id="quantita" value="1" min="1" placeholder="e.g., 1">
+                <input type="number" id="quantita" value="1" min="1" placeholder="e.g., 1" style="margin:0;">
             </div>
             <div>
                 <label>Weight (g)</label>
-                <input type="number" id="peso" value="1000" placeholder="e.g., 1000">
+                <input type="number" id="peso" value="1000" placeholder="e.g., 1000" style="margin:0;">
             </div>
             <div>
                 <label>Price (€)</label>
-                <input type="number" step="0.01" id="prezzo" placeholder="e.g., 22.50">
+                <input type="number" step="0.01" id="prezzo" placeholder="e.g., 22.50" style="margin:0;">
             </div>
         </div>
 
@@ -605,6 +609,7 @@
             document.getElementById('materiale').value = b.materiale || b.material || materials[0];
             document.getElementById('filamentType').value = b.type || filamentTypes[0];
             document.getElementById('colore').value = b.colore || b.color || '';
+            document.getElementById('codeId').value = b.codeId || '';
             document.getElementById('quantita').value = b.quantita || b.quantity || 1;
             document.getElementById('peso').value = b.peso !== undefined ? b.peso : (b.weight || 1000);
             document.getElementById('prezzo').value = b.prezzo || '';
@@ -895,6 +900,7 @@
             const filamentType = document.getElementById('filamentType').value;
             const colore = document.getElementById('colore').value.trim();
             const coloreHex = selectedHex;
+            const codeId = document.getElementById('codeId').value.trim();
             const quantita = document.getElementById('quantita').value.trim();
             const peso = document.getElementById('peso').value.trim();
             const tempHotendMin = document.getElementById('tempHotendMin').value.trim();
@@ -913,6 +919,7 @@
 
             const datiBobina = {
                 produttore,
+                codeId,
                 materiale: materiale.toUpperCase(),
                 type: filamentType,
                 colore,
@@ -956,6 +963,7 @@
             document.getElementById('saveButton').innerText = "Save Spool";
             document.getElementById('deleteInFormBtn').style.display = 'none';
             document.getElementById('colore').value = '';
+            document.getElementById('codeId').value = '';
             document.getElementById('quantita').value = '1';
             document.getElementById('peso').value = '1000';
             document.getElementById('tempHotendMin').value = '';
@@ -1057,6 +1065,13 @@
                 if (hotendStr || bedStr) {
                     dettagliTemp = `<p style="margin: 2px 0;">${hotendStr}${hotendStr && bedStr ? ' | ' : ''}${bedStr}</p>`;
                 }
+                let dettaglioCodeId = '';
+                if (b.codeId && b.codeId.trim() !== '') {
+                    let brandName = b.produttore || b.brand || '';
+                    let searchQuery = encodeURIComponent(brandName + ' ' + b.codeId);
+                    let googleUrl = `https://www.google.com/search?q=${searchQuery}`;
+                    dettaglioCodeId = `<p>🏷️ Code ID: <strong>${b.codeId}</strong> | <a href="${googleUrl}" target="_blank" style="color: var(--primary); text-decoration: underline;">web 🔍</a></p>`;
+                }
                 let dettaglioPrezzo = b.prezzo ? `<p>💶 Price: <strong>€${b.prezzo}</strong></p>` : '';
                 let dettaglioNote = b.note ? `<p style="font-style: italic; color: #6b7280;">💬 "${b.note}"</p>` : '';
                 let hexColor = b.coloreHex || '#cccccc';
@@ -1089,6 +1104,7 @@
                     <div id="dettagli-${b.firebaseId}" class="filament-details" style="display: none; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
                         <p>⚖️ Remaining: <strong>${numBobine} ${numBobine == 1 ? 'spool' : 'spools'} (${pesoRimasto} g)</strong></p>
                         ${dettagliTemp}
+                        ${dettaglioCodeId}
                         ${dettaglioPrezzo}
                         ${dettaglioNote}
                     </div>
